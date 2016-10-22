@@ -1,0 +1,80 @@
+---
+- hosts: all 
+  vars:
+    ubuntu_common_deploy_public_keys:
+      - ~/.ssh/id_rsa.pub
+
+    ubuntu_common_required_packages:
+      - fail2ban
+      - unattended-upgrades
+      - logwatch
+
+    ubuntu_common_optional_packages:
+      - mosh
+      - vim
+
+  tasks:
+
+    - name: Install non-root user for administration
+      become: yes
+      user: name={{ ubuntu_common_deploy_user_name }} group={{ ubuntu_common_deploy_user_name }} groups=admin,www-data shell=/bin/bash
+
+    - name: Add authorized keys for deploy user
+      authorized_key: user={{ ubuntu_common_deploy_user_name }}
+                      key="{{ lookup('file', item) }}"
+      with_items: "{{ubuntu_common_deploy_public_keys}}"
+
+    - name: Allow no password use of sudo
+      become: yes
+      lineinfile: "dest=/etc/sudoers
+                   state=present
+                   line='%admin ALL=(ALL) NOPASSWD: ALL'
+                   validate='visudo -cf %s'"
+
+    - name: Update APT package cache
+      become: yes
+      apt: update_cache=yes cache_valid_time=3600
+
+    - name: Install required packages
+      become: yes
+      apt: state=installed pkg={{ item }}
+      with_items: "{{ubuntu_common_required_packages}}"
+
+    - name: Install optional packages
+      become: yes
+      apt: state=installed pkg={{ item }}
+      with_items: "{{ubuntu_common_optional_packages}}"
+
+    - name: Adjust APT update intervals
+      become: yes
+      copy: src=src/apt_periodic dest=/etc/apt/apt.conf.d/10periodic
+
+    - name: Set up Postfix to relay mail
+      become: yes
+      debconf: name=postfix
+               question='{{ item.question }}'
+               value='{{ item.value }}'
+               vtype='{{ item.vtype }}'
+      with_items:
+        - { question: 'postfix/mailname', value: '{{ ansible_fqdn }}', vtype: 'string' }
+        - { question: 'postfix/main_mailer_type', value: 'Internet Site', vtype: 'string' }
+
+    - name: Email log summary daily
+      lineinfile: dest=/etc/cron.daily/00logwatch
+                  regexp="^/usr/sbin/logwatch"
+                  line="/usr/sbin/logwatch --output mail --mailto {{ ubuntu_common_logwatch_email }} --detail high"
+                  state=present create=yes
+
+    - name: Disallow root SSH access
+      become: yes
+      lineinfile: dest=/etc/ssh/sshd_config
+                  regexp="^PermitRootLogin"
+                  line="PermitRootLogin no"
+                  state=present
+      notify: Restart ssh
+
+  handlers:
+
+    - name: Restart ssh
+      service: name=ssh state=restarted
+
