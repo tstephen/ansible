@@ -1,0 +1,8 @@
+mv {{ wp_dir }}/wordpress/* {{ wp_dir }}/
+chown -R www-data:www-data {{ wp_dir }}
+rmdir {{ wp_dir }}/wordpress/
+mkdir {{ wp_dir }}/wp-content/uploads
+mkdir {{ wp_dir }}/wp-content/upgrades
+chmod g+w {{ wp_dir }}/wp-content/uploads
+chmod g+w {{ wp_dir }}/wp-content/upgrades
+mysql -u {{ wp_db_user }} -p{{ wp_db_pass }} {{ wp_db_name }} < /var/tmp/wordpress-{{ tenant_id }}.sql

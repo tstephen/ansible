@@ -1,0 +1,19 @@
+= ANSIBLE CONFIGURATION
+
+Infrastructure management using Ansible
+
+Sensitive stuff is encrypted with http://docs.ansible.com/ansible/playbooks_vault.html[Ansible Vault] put the decryption key in `~/.vault_pass.txt` (and make sure it is readable only by you!)
+
+== Run playbook
+  
+  ansible-playbook playbook.yml --vault-password-file ~/.vault_pass.txt
+  
+== Overview of files and their purpose
+
+=== Inventory
+
+
+
+=== Playbooks
+
+* **wordpress.yml:** Install / check configuration of a site

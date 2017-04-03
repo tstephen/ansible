@@ -1,0 +1,177 @@
+---
+- hosts: wordpress-sites
+  vars: 
+    wp_plugins:
+      - gitium.zip
+      - jetpack.4.7.1.zip
+      - types.2.2.9.zip
+      - wordpress-importer.0.6.3.zip
+      - page-scroll-to-id.1.6.2.zip
+
+  tasks:
+    - name: Ensure pre-reqs for ansible management
+      become: yes
+      apt:
+        name: python-pip
+
+    - name: Install the Python MySQLB module
+      pip: 
+        name: MySQL-python
+
+    - name: Install CertBot for certificate install and renewal
+      become: yes
+      get_url:
+        url: https://dl.eff.org/certbot-auto
+        dest: /usr/bin
+        mode: a+x
+
+    #- name: Run CertBot on apache
+    #  shell: certbot-auto --apache
+
+    - name: Ensure WP database exists
+      mysql_db:
+        login_user: '{{ mysql_root_user }}'
+        login_password: '{{ mysql_root_pass }}'
+        name: '{{ wp_db_name }}'
+        state: present
+
+    - name: Ensure WP db user exists
+      mysql_user:
+        login_user: '{{ mysql_root_user }}'
+        login_password: '{{ mysql_root_pass }}'
+        name: '{{ wp_db_user }}'
+        password: '{{ wp_db_pass }}'
+        priv: '{{ wp_db_name }}.*:ALL'
+        state: present
+
+    - name: Create WP docs dir
+      become: yes
+      file:
+        path: '{{ wp_dir }}'
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: 0775
+
+    - name: Provision WP site
+      become: yes
+      template:
+        src: src/templates/site-conf.j2
+        dest: '/etc/apache2/sites-available/{{ tenant_id }}.conf'
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Enable WP site
+      become: yes
+      file:
+        src: '/etc/apache2/sites-available/{{ tenant_id }}.conf'
+        dest: '/etc/apache2/sites-enabled/{{ tenant_id }}.conf'
+        state: link
+
+    - name: Reload Apache config
+      become: yes
+      service:
+        name: apache2
+        state: reloaded
+
+    - name: Check WP install
+      stat:
+        path: '{{ wp_dir }}/wp-includes'
+      register: wp
+
+    - name: Unarchive WP files
+      become: yes
+      become_user: www-data
+      unarchive:
+        src: https://wordpress.org/latest.zip
+        dest: '{{ wp_dir }}'
+        remote_src: True
+        owner: www-data
+      when: wp.stat.isdir is undefined
+
+    - name: Create WP DB script
+      template:
+        src: src/templates/wordpress-sql.j2
+        dest: '/var/tmp/wordpress-{{ tenant_id }}.sql'
+        mode: 0644
+
+    - name: Create WP move script
+      become: yes
+      template:
+        src: src/templates/wp-post-install-sh.j2
+        dest: '/var/tmp/wp-post-install-{{ tenant_id }}.sh'
+        owner: www-data
+        group: www-data
+        mode: 0744
+      when: wp.stat.isdir is undefined
+
+    - name: Install WP plugins
+      become: yes
+      become_user: www-data
+      unarchive:
+        src: 'https://downloads.wordpress.org/plugin/{{ item }}'
+        dest: '{{ wp_dir }}/wp-content/plugins/'
+        remote_src: True
+        owner: www-data
+      with_items: "{{ wp_plugins }}"
+
+    - name: Install Omny Link forms plugin
+      become: yes
+      become_user: www-data
+      unarchive:
+        src: src/rest-forms.zip
+        dest: '{{ wp_dir }}/wp-content/plugins/'
+        owner: www-data
+
+    - name: Install Bootstrap theme
+      become: yes
+      become_user: www-data
+      unarchive:
+        src: src/bst.zip
+        dest: '{{ wp_dir }}/wp-content/themes/'
+        owner: www-data
+
+    - name: WP post install (db & files)
+      become: yes
+      become_user: www-data
+# Cannot seem to get the shell or command modules to do this.
+#      shell: mv '{{ wp_dir }}/wordpress/' '{{ wp_dir }}/'
+      shell: /var/tmp/wp-post-install-{{ tenant_id }}.sh
+      when: wp.stat.isdir is undefined
+
+    - name: Check WP config
+      stat:
+        path: '{{ wp_dir }}/wp-config.php'
+      register: wpconfig
+
+#    - name: Gen WP salts
+#      get_url: https://api.wordpress.org/secret-key/1.1/salt/
+
+    - name: Install WP config
+      become: yes
+      template:
+        src: src/templates/wp-config.j2
+        dest: '{{ wp_dir }}/wp-config.php'
+        owner: www-data
+        group: www-data
+        mode: 0644
+      when: wpconfig.stat.exists is undefined or wpconfig.stat.exists == False
+
+    - name: Remove default WP plugin 'dolly'
+      become: yes
+      file: path='{{ wp_dir }}/wp-content/plugins/hello.php' state=absent
+
+    - name: Remove default WP plugin 'akismet'
+      become: yes
+      file: path='{{ wp_dir }}/wp-content/plugins/akismet' state=absent
+
+    - name: Remove default WP theme 'twentyfifteen'
+      become: yes
+      file: path='{{ wp_dir }}/wp-content/themes/twentyfifteen' state=absent
+
+    - name: Remove default WP theme 'twentysixteen'
+      become: yes
+      file: path='{{ wp_dir }}/wp-content/themes/twentysixteen' state=absent
+
+

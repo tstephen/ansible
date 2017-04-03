@@ -1,0 +1,17 @@
+<VirtualHost *:80>
+  ServerAdmin {{ wp_admin_email }}
+  ServerName 46.101.88.98 
+  #ServerName {{ tenant_domain }}
+  ServerAlias new.{{ tenant_domain }} # www.{{ tenant_domain }} {{ tenant_domain }}
+  DocumentRoot {{ wp_dir }}
+
+  <Directory {{ wp_dir }}>
+      Options Indexes FollowSymLinks
+      AllowOverride All
+      Require all granted
+  </Directory>
+  
+  ErrorLog ${APACHE_LOG_DIR}/error-{{ tenant_id }}.log
+  CustomLog ${APACHE_LOG_DIR}/access-{{ tenant_id }}.log combined
+</VirtualHost>
+

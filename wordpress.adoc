@@ -1,0 +1,53 @@
+= Create a new WordPress site
+
+Assuming database and web server already installed and we're just adding
+another site.
+
+1. Ensure www root has the correct permissions 
+  
+    sudo chown -R www-data:www-data .
+    # ensure new files owned by www-data
+    chmod g+s .
+
+1. Create database & user 
+  
+  mysql> create database srp_wp;
+  Query OK, 1 row affected (0.00 sec)
+
+  mysql> create user srp_admin identified by 'password';
+  Query OK, 0 rows affected (0.01 sec)
+
+  mysql> grant all on srp_wp.* to srp_admin; 
+  Query OK, 0 rows affected (0.00 sec)
+  
+3. Get & Install WordPress
+
+    wget http://wordpress.org/latest.zip
+    unzip latest.zip
+    mv wordpress/* .
+    rmdir wordpress
+    mkdir wp-content/uploads
+    mkdir wp-content/upgrades
+    chmod g+w wp-content/uploads
+    chmod g+w wp-content/upgrades
+
+5. Run WordPress installation (in browser)
+
+7. Install plugins
+  - Gitium
+  - WP Members (see below for suggested setup)
+
+7. WP Members
+  - Create login page containing shortcode `[wpmem_form login]`
+  - Create register page containing 
+    ```[wpmem_form register]
+       You are already logged in.
+       [/wpmem_form]
+    ```
+  - Create profile page containing
+    ```
+       [wpmem_profile]
+    ```
+  - Optionally use, [wpmem_loginout] somewhere in the header or footer
+    to display those buttons, but to be honest the fact that it doesn't
+    offer Register as well as login makes it pretty useless IMO.
