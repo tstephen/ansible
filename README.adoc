@@ -12,8 +12,14 @@ Sensitive stuff is encrypted with http://docs.ansible.com/ansible/playbooks_vaul
 
 === Inventory
 
+. Edit hosts file
 
+----
+ansible-vault --vault-password-file ~/.vault_pass.txt edit ansible/inventory/hosts
+----
 
 === Playbooks
+
+* **ubuntu.yml:** Basic system setup
 
 * **wordpress.yml:** Install / check configuration of a site

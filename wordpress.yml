@@ -1,20 +1,28 @@
 ---
 - hosts: wordpress-sites
+  become: yes
   vars: 
+    reqd_packages:
+      - apache2
+      - python-pip
+      - unzip
     wp_plugins:
       - gitium.zip
       - jetpack.4.7.1.zip
       - types.2.2.9.zip
       - wordpress-importer.0.6.3.zip
       - page-scroll-to-id.1.6.2.zip
+  roles:
+    - { role: geerlingguy.mysql }
+
 
   tasks:
     - name: Ensure pre-reqs for ansible management
       become: yes
-      apt:
-        name: python-pip
+      apt: state=installed pkg={{ item }}
+      with_items: "{{ reqd_packages }}"
 
-    - name: Install the Python MySQLB module
+    - name: Install the Python MySQL module
       pip: 
         name: MySQL-python
 
@@ -28,6 +36,9 @@
     #- name: Run CertBot on apache
     #  shell: certbot-auto --apache
 
+    #- name: crontab to autorenew
+    #34 4 * * * certbot-auto renew --quiet --no-self-upgrade
+
     - name: Ensure WP database exists
       mysql_db:
         login_user: '{{ mysql_root_user }}'
@@ -37,8 +48,8 @@
 
     - name: Ensure WP db user exists
       mysql_user:
-        login_user: '{{ mysql_root_user }}'
-        login_password: '{{ mysql_root_pass }}'
+        login_user: '{{ mysql_root_username }}'
+        login_password: '{{ mysql_root_password }}'
         name: '{{ wp_db_user }}'
         password: '{{ wp_db_pass }}'
         priv: '{{ wp_db_name }}.*:ALL'
@@ -88,6 +99,8 @@
         dest: '{{ wp_dir }}'
         remote_src: True
         owner: www-data
+        group: www-data
+        mode: 0664
       when: wp.stat.isdir is undefined
 
     - name: Create WP DB script
@@ -105,32 +118,6 @@
         group: www-data
         mode: 0744
       when: wp.stat.isdir is undefined
-
-    - name: Install WP plugins
-      become: yes
-      become_user: www-data
-      unarchive:
-        src: 'https://downloads.wordpress.org/plugin/{{ item }}'
-        dest: '{{ wp_dir }}/wp-content/plugins/'
-        remote_src: True
-        owner: www-data
-      with_items: "{{ wp_plugins }}"
-
-    - name: Install Omny Link forms plugin
-      become: yes
-      become_user: www-data
-      unarchive:
-        src: src/rest-forms.zip
-        dest: '{{ wp_dir }}/wp-content/plugins/'
-        owner: www-data
-
-    - name: Install Bootstrap theme
-      become: yes
-      become_user: www-data
-      unarchive:
-        src: src/bst.zip
-        dest: '{{ wp_dir }}/wp-content/themes/'
-        owner: www-data
 
     - name: WP post install (db & files)
       become: yes
@@ -155,8 +142,40 @@
         dest: '{{ wp_dir }}/wp-config.php'
         owner: www-data
         group: www-data
-        mode: 0644
+        mode: 0660
       when: wpconfig.stat.exists is undefined or wpconfig.stat.exists == False
+
+    - name: Install WP plugins
+      become: yes
+      become_user: www-data
+      unarchive:
+        src: 'https://downloads.wordpress.org/plugin/{{ item }}'
+        dest: '{{ wp_dir }}/wp-content/plugins/'
+        remote_src: True
+        owner: www-data
+        group: www-data
+        mode: 0664
+      with_items: "{{ wp_plugins }}"
+
+    - name: Install Omny Link forms plugin
+      become: yes
+      become_user: www-data
+      unarchive:
+        src: src/rest-forms.zip
+        dest: '{{ wp_dir }}/wp-content/plugins/'
+        owner: www-data
+        group: www-data
+        mode: 0664
+
+    - name: Install Bootstrap theme
+      become: yes
+      become_user: www-data
+      unarchive:
+        src: src/bst.zip
+        dest: '{{ wp_dir }}/wp-content/themes/'
+        owner: www-data
+        group: www-data
+        mode: 0664
 
     - name: Remove default WP plugin 'dolly'
       become: yes

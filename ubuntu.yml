@@ -1,5 +1,6 @@
 ---
-- hosts: all 
+- hosts: servers
+  remote_user: root
   vars:
     ubuntu_common_deploy_public_keys:
       - ~/.ssh/id_rsa.pub
@@ -16,8 +17,9 @@
   tasks:
 
     - name: Install non-root user for administration
+      remote_user: root
       become: yes
-      user: name={{ ubuntu_common_deploy_user_name }} group={{ ubuntu_common_deploy_user_name }} groups=admin,www-data shell=/bin/bash
+      user: name={{ ubuntu_common_deploy_user_name }} groups=admin,www-data shell=/bin/bash
 
     - name: Add authorized keys for deploy user
       authorized_key: user={{ ubuntu_common_deploy_user_name }}
@@ -78,3 +80,4 @@
     - name: Restart ssh
       service: name=ssh state=restarted
 
+    #- name: TODO Set locale (edit /etc/default/locale)
