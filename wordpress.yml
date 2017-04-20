@@ -6,12 +6,17 @@
       - apache2
       - python-pip
       - unzip
+    wp_dirs:
+      - /wp-admin
+      - /wp-content
+      - /wp-content/uploads
+      - /wp-content/upgrades
+      - /wp-includes
     wp_plugins:
       - gitium.zip
-      - jetpack.4.7.1.zip
+      - jetpack.4.8.2.zip
       - types.2.2.9.zip
       - wordpress-importer.0.6.3.zip
-      - page-scroll-to-id.1.6.2.zip
   roles:
     - { role: geerlingguy.mysql }
 
@@ -33,7 +38,7 @@
         dest: /usr/bin
         mode: a+x
 
-    #- name: Run CertBot on apache
+    #- name: Run CertBot on apache (needs to be manual for now)
     #  shell: certbot-auto --apache
 
     #- name: crontab to autorenew
@@ -41,8 +46,8 @@
 
     - name: Ensure WP database exists
       mysql_db:
-        login_user: '{{ mysql_root_user }}'
-        login_password: '{{ mysql_root_pass }}'
+        login_user: '{{ mysql_root_username }}'
+        login_password: '{{ mysql_root_password }}'
         name: '{{ wp_db_name }}'
         state: present
 
@@ -100,7 +105,7 @@
         remote_src: True
         owner: www-data
         group: www-data
-        mode: 0664
+        #mode: 0664
       when: wp.stat.isdir is undefined
 
     - name: Create WP DB script
@@ -126,6 +131,23 @@
 #      shell: mv '{{ wp_dir }}/wordpress/' '{{ wp_dir }}/'
       shell: /var/tmp/wp-post-install-{{ tenant_id }}.sh
       when: wp.stat.isdir is undefined
+
+    - name: Create WP dirs if not existing and set permissions
+      file:
+        path: '{{ wp_dir }}{{ item }}'
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: 0775
+      with_items: "{{ wp_dirs }}"
+
+    - name: Ensure htaccess available and with right permissions
+      file: 
+        path: '{{ wp_dir }}/.htaccess'
+        state: touch
+        owner: www-data
+        group: www-data
+        mode: 0664
 
     - name: Check WP config
       stat:
@@ -154,7 +176,6 @@
         remote_src: True
         owner: www-data
         group: www-data
-        mode: 0664
       with_items: "{{ wp_plugins }}"
 
     - name: Install Omny Link forms plugin
@@ -165,9 +186,8 @@
         dest: '{{ wp_dir }}/wp-content/plugins/'
         owner: www-data
         group: www-data
-        mode: 0664
 
-    - name: Install Bootstrap theme
+    - name: Install Bootstrap starter theme
       become: yes
       become_user: www-data
       unarchive:
@@ -175,7 +195,19 @@
         dest: '{{ wp_dir }}/wp-content/themes/'
         owner: www-data
         group: www-data
+
+    - name: Create basic Omny config
+      become: yes
+      template:
+        src: src/templates/tenant-config.json.j2
+        dest: '{{ wp_dir }}/wp-content/themes/bst/tenant-config.json'
+        force: no
+        owner: www-data
+        group: www-data
         mode: 0664
+
+    - name: Rename theme to tenant name
+      command: creates="{{ wp_dir }}/wp-content/themes/{{ tenant_id }}" mv {{ wp_dir }}/wp-content/themes/bst {{ wp_dir }}/wp-content/themes/{{ tenant_id }}  
 
     - name: Remove default WP plugin 'dolly'
       become: yes
