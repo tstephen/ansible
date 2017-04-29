@@ -126,6 +126,23 @@
         dest: '/var/tmp/wordpress-{{ tenant_id }}.sql'
         mode: 0644
 
+    - name: Create remote WP DB backup script
+      template:
+        src: src/templates/db-remote-backup.sh.j2
+        dest: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-db-remote-backup.sh'
+        owner: "{{ ansible_ssh_user }}"
+        group: www-data
+        mode: 0744
+
+    # Creates an job like "0 5 * * * /home/tstephen/foo-db-remote-backup.sh"
+    - name: Ensure cron job for db backup exists
+      cron:
+        name: "remote backup {{ tenant_id }}_wp_db"
+        minute: "0"
+        hour: "5"
+        job: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-db-remote-backup.sh'
+        user: "{{ ansible_ssh_user }}"
+
     - name: Create WP DB backup script
       template:
         src: src/templates/db-backup.sh.j2
@@ -134,12 +151,12 @@
         group: www-data
         mode: 0744
 
-    # Creates an job like "0,5,19 * * * /home/tstephen/foo-db-backup.sh"
+    # Creates an job like "0 19 * * * /home/tstephen/foo-db-backup.sh"
     - name: Ensure cron job for db backup exists
       cron:
         name: "backup {{ tenant_id }}_wp_db"
         minute: "0"
-        hour: "5,19"
+        hour: "19"
         job: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-db-backup.sh'
         user: "{{ ansible_ssh_user }}"
 

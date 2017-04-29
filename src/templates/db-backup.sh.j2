@@ -1,1 +1,1 @@
-mysqldump {{ tenant_id }}_wp_db | gzip | ssh knowprocess.com "cat > backups/daily/{{ tenant_id }}_dump.sql.gz"
+mysqldump {{ tenant_id }}_wp_db > /var/www-{{ tenant_id }}/wp-content/{{ tenant_id }}.sql
