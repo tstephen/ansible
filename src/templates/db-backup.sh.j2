@@ -1,0 +1,1 @@
+mysqldump {{ tenant_id }}_wp_db | gzip | ssh knowprocess.com "cat > backups/daily/{{ tenant_id }}_dump.sql.gz"

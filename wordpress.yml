@@ -4,6 +4,12 @@
   vars: 
     reqd_packages:
       - apache2
+      - git
+      - libapache2-mod-php5
+      - php5
+      - php5-curl
+      - php5-mcrypt
+      - php5-mysql
       - python-pip
       - unzip
     wp_dirs:
@@ -17,8 +23,8 @@
       - jetpack.4.8.2.zip
       - types.2.2.9.zip
       - wordpress-importer.0.6.3.zip
-  roles:
-    - { role: geerlingguy.mysql }
+#  roles:
+#    - { role: geerlingguy.mysql }
 
 
   tasks:
@@ -41,10 +47,16 @@
     #- name: Run CertBot on apache (needs to be manual for now)
     #  shell: certbot-auto --apache
 
-    #- name: crontab to autorenew
-    #34 4 * * * certbot-auto renew --quiet --no-self-upgrade
+    # Create job like 34 4 * * * certbot-auto renew --quiet --no-self-upgrade
+    - name: crontab to autorenew certs
+      cron:
+        name: "Renew letsencrypt certificates regularly"
+        minute: "34"
+        hour: "4"
+        job: "certbot-auto renew --quiet --no-self-upgrade"
 
     - name: Ensure WP database exists
+      become: yes
       mysql_db:
         login_user: '{{ mysql_root_username }}'
         login_password: '{{ mysql_root_password }}'
@@ -113,6 +125,23 @@
         src: src/templates/wordpress-sql.j2
         dest: '/var/tmp/wordpress-{{ tenant_id }}.sql'
         mode: 0644
+
+    - name: Create WP DB backup script
+      template:
+        src: src/templates/db-backup.sh.j2
+        dest: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-db-backup.sh'
+        owner: "{{ ansible_ssh_user }}"
+        group: www-data
+        mode: 0744
+
+    # Creates an job like "0,5,19 * * * /home/tstephen/foo-db-backup.sh"
+    - name: Ensure cron job for db backup exists
+      cron:
+        name: "backup {{ tenant_id }}_wp_db"
+        minute: "0"
+        hour: "5,19"
+        job: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-db-backup.sh'
+        user: "{{ ansible_ssh_user }}"
 
     - name: Create WP move script
       become: yes

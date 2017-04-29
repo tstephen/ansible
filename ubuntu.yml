@@ -21,6 +21,23 @@
       become: yes
       user: name={{ ubuntu_common_deploy_user_name }} groups=admin,www-data shell=/bin/bash
 
+    - name: Check if keys exist
+      stat:
+        path: '~/.ssh/id_rsa'
+      register: idrsa
+
+    # Generate an OpenSSL private key with the default values (4096 bits, RSA)
+    # and no public key
+    - name: Generate keys to connect to other machines
+      shell: ssh-keygen -t rsa -f ~/.ssh/id_rsa -P ''
+      when: idrsa.stat.exists is undefined or idrsa.stat.exists == False
+
+    - name: Install non-root devops users
+      remote_user: root
+      become: yes
+      user: name={{ item }} groups=admin,www-data shell=/bin/bash
+      with_items: "{{ os_users }}"
+
     - name: Add authorized keys for deploy user
       authorized_key: user={{ ubuntu_common_deploy_user_name }}
                       key="{{ lookup('file', item) }}"
@@ -62,6 +79,7 @@
         - { question: 'postfix/main_mailer_type', value: 'Internet Site', vtype: 'string' }
 
     - name: Email log summary daily
+      become: yes
       lineinfile: dest=/etc/cron.daily/00logwatch
                   regexp="^/usr/sbin/logwatch"
                   line="/usr/sbin/logwatch --output mail --mailto {{ ubuntu_common_logwatch_email }} --detail high"

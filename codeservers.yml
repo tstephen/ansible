@@ -1,0 +1,32 @@
+---
+- hosts: codeservers
+  become: yes
+  vars:
+
+  tasks: 
+
+    # Create job like 34 4 * * * certbot-auto renew --quiet --no-self-upgrade
+    #- name: crontab to autorenew certs
+    #  cron:
+    #    name: "Renew letsencrypt certificates regularly"
+    #    minute: "34"
+    #    hour: "4"
+    #    job: "certbot-auto renew --quiet --no-self-upgrade"
+
+    - name: crontab to rotate db backups weekly
+      cron:
+        name: "Rotate DB backups weekly on Friday nights"
+        minute: "30"
+        hour: 23
+        weekday: 5
+        job: "cp /home/{{ ansible_ssh_user }}/backups/daily/*sql.gz /home/{{ ansible_ssh_user }}/backups/weekly/"
+        user: "{{ ansible_ssh_user }}"
+
+    - name: crontab to rotate db backups monthly
+      cron:
+        name: "Rotate DB backups monthly"
+        minute: "30"
+        hour: 2
+        day: 1
+        job: "cp /home/{{ ansible_ssh_user }}/backups/weekly/*sql.gz /home/{{ ansible_ssh_user }}/backups/monthly/"
+        user: "{{ ansible_ssh_user }}"

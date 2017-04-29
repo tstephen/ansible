@@ -1,0 +1,25 @@
+---
+- hosts: dbservers
+  become: yes
+  vars:
+    reqd_packages:
+      - libmysqlclient-dev
+      - python-pip
+  roles:
+    - { role: geerlingguy.mysql }
+    # requires php 7
+    #- { role: geerlingguy.phpmyadmin }
+
+  tasks:
+    - name: Ensure pre-reqs for ansible management
+      become: yes
+      apt: state=installed pkg={{ item }}
+      with_items: "{{ reqd_packages }}"
+
+    - name: Install the Python MySQL module
+      pip: 
+        name: MySQL-python
+
+
+    # Had to install phpmyadmin manually for now
+    # https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-phpmyadmin-on-ubuntu-14-04

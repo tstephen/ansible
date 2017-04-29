@@ -4,10 +4,14 @@ Infrastructure management using Ansible
 
 Sensitive stuff is encrypted with http://docs.ansible.com/ansible/playbooks_vault.html[Ansible Vault] put the decryption key in `~/.vault_pass.txt` (and make sure it is readable only by you!)
 
+== Fetch roles from galaxy
+
+  ansible-galaxy install geerlingguy.mysql
+
 == Run playbook
-  
-  ansible-playbook playbook.yml --vault-password-file ~/.vault_pass.txt
-  
+
+  ansible-playbook --vault-password-file ~/.vault_pass.txt playbook.yml
+
 == Overview of files and their purpose
 
 === Inventory
@@ -21,5 +25,7 @@ ansible-vault --vault-password-file ~/.vault_pass.txt edit ansible/inventory/hos
 === Playbooks
 
 * **ubuntu.yml:** Basic system setup
+
+* **dbservers.yml:** Install and configure MySQL
 
 * **wordpress.yml:** Install / check configuration of a site
