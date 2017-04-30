@@ -7,8 +7,6 @@
 
     ubuntu_common_required_packages:
       - fail2ban
-      - unattended-upgrades
-      - logwatch
 
     ubuntu_common_optional_packages:
       - mosh
@@ -77,6 +75,26 @@
       with_items:
         - { question: 'postfix/mailname', value: '{{ ansible_fqdn }}', vtype: 'string' }
         - { question: 'postfix/main_mailer_type', value: 'Internet Site', vtype: 'string' }
+
+    - name: create the file to be used for swap
+      become: yes
+      command: fallocate -l 1G /mnt/1GB.swap
+
+    - name: format the file for swap
+      become: yes
+      command: mkswap /mnt/1GB.swap
+
+    - name: change swap file permissions
+      become: yes
+      file: path=/mnt/1GB.swap owner=root group=root mode=0600
+
+    - name: add the file to the system as a swap file
+      become: yes
+      command: swapon /mnt/1GB.swap
+
+    - name: write swap entry in fstab
+      become: yes
+      mount: name=none src=/mnt/1GB.swap fstype=swap opts=sw passno=0 dump=0 state=present
 
     - name: Email log summary daily
       become: yes
