@@ -1,0 +1,5 @@
+ssh knowprocess.com "cat ~/backups/daily/ol_dump.sql.gz" | gunzip | mysql {{ app_db }} 
+
+ssh knowprocess.com "cat ~/backups/daily/act_dump.sql.gz" | gunzip | mysql {{ app_db }} 
+
+ssh knowprocess.com "cat ~/backups/daily/act_hi_dump.sql.gz" | gunzip | mysql {{ app_db }} 

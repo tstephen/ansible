@@ -1,13 +1,13 @@
 #!/bin/bash
-# description: omny-link start stop restart
-# processname: omny-link
-# chkconfig: 234 20 80
+# description: {{ app_id }} start stop restart
+# service name: {{ app_id }}
 
-. /etc/omny-link/conf/env.sh
+. /etc/{{ app_id }}/conf/env.sh
 
 echo "Service [$APP_NAME] - [$1]"
 
 echo "    JAVA_HOME=$JAVA_HOME"
+echo "    JAVA_OPTS=$JAVA_OPTS"
 echo "    APP_HOME=$APP_HOME"
 echo "    APP_NAME=$APP_NAME"
 echo "    APP_VSN=$APP_VSN"
@@ -23,7 +23,7 @@ function start {
     fi
     echo "Starting application..."
     cp /var/log/$APP_NAME/app.log /var/tmp/$APP_NAME-`date -I`.log
-    nohup $JAVA_HOME/bin/java -jar $APP_HOME/$APP_JAR \
+    nohup $JAVA_HOME/bin/java $JAVA_OPTS -jar $APP_HOME/$APP_JAR \
         --spring.config.location=file:$APP_HOME/   \
         < /dev/null > /var/log/$APP_NAME/app.log 2>&1 &
 }

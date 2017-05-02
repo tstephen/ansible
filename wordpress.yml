@@ -1,7 +1,7 @@
 ---
 - hosts: wordpress-sites
   become: yes
-  vars: 
+  vars:
     reqd_packages:
       - apache2
       - git
@@ -13,11 +13,9 @@
       - python-pip
       - unzip
     wp_dirs:
-      - /wp-admin
       - /wp-content
       - /wp-content/uploads
       - /wp-content/upgrades
-      - /wp-includes
     wp_plugins:
       - gitium.zip
       - jetpack.4.8.2.zip
@@ -34,7 +32,7 @@
       with_items: "{{ reqd_packages }}"
 
     - name: Install the Python MySQL module
-      pip: 
+      pip:
         name: MySQL-python
 
     - name: Install CertBot for certificate install and renewal
@@ -89,6 +87,7 @@
         owner: root
         group: root
         mode: 0644
+      register: apache_config
 
     - name: Enable WP site
       become: yes
@@ -102,6 +101,7 @@
       service:
         name: apache2
         state: reloaded
+      when: apache_config.changed
 
     - name: Check WP install
       stat:
@@ -128,36 +128,36 @@
 
     - name: Create remote WP DB backup script
       template:
-        src: src/templates/db-remote-backup.sh.j2
-        dest: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-db-remote-backup.sh'
+        src: src/templates/wp-db-remote-backup.sh.j2
+        dest: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-wp-db-remote-backup.sh'
         owner: "{{ ansible_ssh_user }}"
         group: www-data
         mode: 0744
 
-    # Creates an job like "0 5 * * * /home/tstephen/foo-db-remote-backup.sh"
+    # Creates an job like "0 5 * * * /home/tstephen/foo-wp-db-remote-backup.sh"
     - name: Ensure cron job for db backup exists
       cron:
         name: "remote backup {{ tenant_id }}_wp_db"
         minute: "0"
         hour: "5"
-        job: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-db-remote-backup.sh'
+        job: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-wp-db-remote-backup.sh'
         user: "{{ ansible_ssh_user }}"
 
     - name: Create WP DB backup script
       template:
-        src: src/templates/db-backup.sh.j2
-        dest: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-db-backup.sh'
+        src: src/templates/wp-db-backup.sh.j2
+        dest: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-wp-db-backup.sh'
         owner: "{{ ansible_ssh_user }}"
         group: www-data
         mode: 0744
 
-    # Creates an job like "0 19 * * * /home/tstephen/foo-db-backup.sh"
+    # Creates an job like "0 19 * * * /home/tstephen/foo-wp-db-backup.sh"
     - name: Ensure cron job for db backup exists
       cron:
         name: "backup {{ tenant_id }}_wp_db"
         minute: "0"
         hour: "19"
-        job: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-db-backup.sh'
+        job: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-wp-db-backup.sh'
         user: "{{ ansible_ssh_user }}"
 
     - name: Create WP move script
@@ -187,8 +187,10 @@
         mode: 0775
       with_items: "{{ wp_dirs }}"
 
+    # Cannot use file as will not fail if file absent (see docs)
+    # however touch results in a change every time
     - name: Ensure htaccess available and with right permissions
-      file: 
+      file:
         path: '{{ wp_dir }}/.htaccess'
         state: touch
         owner: www-data
@@ -223,6 +225,7 @@
         owner: www-data
         group: www-data
       with_items: "{{ wp_plugins }}"
+      when: wp.stat.isdir is undefined
 
     - name: Install Omny Link forms plugin
       become: yes
@@ -232,6 +235,7 @@
         dest: '{{ wp_dir }}/wp-content/plugins/'
         owner: www-data
         group: www-data
+      when: wp.stat.isdir is undefined
 
     - name: Install Bootstrap starter theme
       become: yes
@@ -241,19 +245,27 @@
         dest: '{{ wp_dir }}/wp-content/themes/'
         owner: www-data
         group: www-data
+      when: wp.stat.isdir is undefined
+
+    - name: Rename theme to tenant name
+      command: creates="{{ wp_dir }}/wp-content/themes/{{ tenant_id }}" mv {{ wp_dir }}/wp-content/themes/bst {{ wp_dir }}/wp-content/themes/{{ tenant_id }}
+      when: wp.stat.isdir is undefined
+
+    - name: Check Omny config
+      stat:
+        path: '{{ wp_dir }}/wp-content/themes/{{ tenant_id }}/tenant-config.json'
+      register: omnyconfig
 
     - name: Create basic Omny config
       become: yes
       template:
         src: src/templates/tenant-config.json.j2
-        dest: '{{ wp_dir }}/wp-content/themes/bst/tenant-config.json'
+        dest: '{{ wp_dir }}/wp-content/themes/{{ tenant_id }}/tenant-config.json'
         force: no
         owner: www-data
         group: www-data
         mode: 0664
-
-    - name: Rename theme to tenant name
-      command: creates="{{ wp_dir }}/wp-content/themes/{{ tenant_id }}" mv {{ wp_dir }}/wp-content/themes/bst {{ wp_dir }}/wp-content/themes/{{ tenant_id }}  
+      when: omnyconfig.stat.exists is undefined or omnyconfig.stat.exists == False
 
     - name: Remove default WP plugin 'dolly'
       become: yes
@@ -271,4 +283,44 @@
       become: yes
       file: path='{{ wp_dir }}/wp-content/themes/twentysixteen' state=absent
 
+    - name: Init git repo
+      become_user: www-data
+      command: git init
+      args:
+        chdir: "{{ wp_dir }}"
+      when: wp.stat.isdir is undefined
+
+    - name: Check if origin is set
+      command: git remote
+      args:
+        chdir: "{{ wp_dir }}"
+      register: origin
+
+    - name: Setup origin for git
+      command: git remote add origin http://gitium:{{ gitium_pass }}@code.knowprocess.com/omny/{{ tenant_id }}
+      args:
+        chdir: "{{ wp_dir }}"
+      when: origin.stdout != 'origin'
+
+    - name: Add WP files to git
+      command: git add {{ wp_dir }}
+      args:
+        chdir: "{{ wp_dir }}"
+      when: origin.stdout != 'origin'
+
+    - name: Change ownership of git dir
+      file:
+        path: "{{ wp_dir }}/.git"
+        owner: www-data
+        group: www-data
+        recurse: yes
+        mode: "u+rw,g+rw,o-w"
+
+    # This often fails claiming that git --global config user.xxx is unset
+    #- name: Initial commit
+    #  become_user: www-data
+    #  command: git commit -m "Initial commit"
+    #  args:
+    #    chdir: "{{ wp_dir }}"
+    #  when: wp.stat.isdir is undefined and origin.stdout != 'origin'
 

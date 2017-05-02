@@ -1,0 +1,91 @@
+---
+- hosts: boot-apps
+  become: yes
+
+  roles:
+
+  tasks:
+
+    - name: Create init script
+      template:
+        src: src/templates/app-init.sh.j2
+        dest: /etc/init.d/{{ app_id }}
+        owner: root
+        group: root
+        mode: 0755
+        backup: yes
+
+    - name: Create environment script
+      template:
+        src: src/templates/app-env.sh.j2
+        dest: /etc/{{ app_id }}/conf/env.sh
+        owner: root
+        group: root
+        mode: 0644
+        backup: yes
+
+    - name: Create restart script
+      template:
+        src: src/templates/app-restart.sh.j2
+        dest: /opt/{{ app_id }}/bin/{{ app_id }}-restart
+        owner: "{{ ansible_ssh_user }}"
+        group: admin
+        mode: 0744
+
+    - name: Ensure database exists
+      become: yes
+      mysql_db:
+        login_user: '{{ mysql_root_username }}'
+        login_password: '{{ mysql_root_password }}'
+        name: '{{ app_db }}'
+        state: present
+
+    - name: Ensure db user exists
+      mysql_user:
+        login_user: '{{ mysql_root_username }}'
+        login_password: '{{ mysql_root_password }}'
+        name: '{{ app_db_user }}'
+        password: '{{ app_db_pass }}'
+        priv: '{{ app_db }}.*:ALL'
+        state: present
+
+    - name: Create db backup script
+      template:
+        src: src/templates/app-db-backup.sh.j2
+        dest: '/opt/{{ app_id }}/bin/db-backup.sh'
+        owner: "{{ ansible_ssh_user }}"
+        group: admin
+        mode: 0744
+
+    - name: Create db restore script
+      template:
+        src: src/templates/app-db-restore.sh.j2
+        dest: '/opt/{{ app_id }}/bin/db-restore.sh'
+        owner: "{{ ansible_ssh_user }}"
+        group: admin
+        mode: 0744
+
+    - name: Create client my.cnf for user
+      template:
+        src: src/templates/user-my.cnf.j2
+        dest: '/home/{{ ansible_ssh_user }}/.my.cnf'
+        owner: "{{ ansible_ssh_user }}"
+        mode: 0700
+
+    # Creates an job like "0 5 * * * /opt/foo/db-backup.sh"
+    - name: Ensure cron job for db backup exists
+      cron:
+        name: "remote backup {{ app_db }}"
+        minute: "30"
+        hour: "4,19"
+        job: '/opt/{{ app_id }}/bin/db-backup.sh'
+        user: "{{ ansible_ssh_user }}"
+
+    - name: Create log dir if not existing and set permissions
+      file:
+        path: '/var/log/{{ app_id }}'
+        state: directory
+        owner: "{{ ansible_ssh_user }}"
+        group: admin
+        mode: 0775
+
