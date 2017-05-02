@@ -35,15 +35,17 @@
       pip:
         name: pyapi-gitlab
 
-    - name: Create Gitlab Project in group Omny
-      gitlab_project:
-        server_url: http://code.knowprocess.com
-        login_user: "{{ git_user }}"
-        login_password: "{{ git_pass }}"
-        name: "{{ item }}"
-        group: omny
-        issues_enabled: True
-        wiki_enabled: False
-        snippets_enabled: False
-        state: present
-      with_items: "{{ tenants }}"
+    # Unfortunately cannot use this as it disables issues, both when set 
+    # explicitly and also is ommitted (default is supposed to be True)
+    #- name: Create Gitlab Project in group Omny
+    #  gitlab_project:
+    #    server_url: http://code.knowprocess.com
+    #    login_user: "{{ git_user }}"
+    #    login_password: "{{ git_pass }}"
+    #    name: "{{ item }}"
+    #    group: omny
+    #    issues_enabled: True
+    #    wiki_enabled: False
+    #    snippets_enabled: False
+    #    state: present
+    #  with_items: "{{ tenants }}"
