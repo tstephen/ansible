@@ -308,9 +308,9 @@
         chdir: "{{ wp_dir }}"
       when: origin.stdout != 'origin'
 
-    - name: Change ownership of git dir
+    - name: Change ownership of wp dir
       file:
-        path: "{{ wp_dir }}/.git"
+        path: "{{ wp_dir }}"
         owner: www-data
         group: www-data
         recurse: yes
