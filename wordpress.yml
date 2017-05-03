@@ -187,15 +187,14 @@
         mode: 0775
       with_items: "{{ wp_dirs }}"
 
-    # Cannot use file as will not fail if file absent (see docs)
-    # however touch results in a change every time
-    - name: Ensure htaccess available and with right permissions
-      file:
-        path: '{{ wp_dir }}/.htaccess'
-        state: touch
+    - name: Setup .htaccess file
+      become: yes
+      template:
+        src: src/templates/wp.htaccess.j2
+        dest: '{{ wp_dir }}/.htaccess'
         owner: www-data
         group: www-data
-        mode: 0664
+        mode: 0660
 
     - name: Check WP config
       stat:
