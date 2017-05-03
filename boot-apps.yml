@@ -77,7 +77,7 @@
       cron:
         name: "remote backup {{ app_db }}"
         minute: "30"
-        hour: "4,19"
+        hour: "*/2"
         job: '/opt/{{ app_id }}/bin/db-backup.sh'
         user: "{{ ansible_ssh_user }}"
 
