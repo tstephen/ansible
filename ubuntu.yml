@@ -1,4 +1,5 @@
 ---
+#- include: handlers/main.yml
 - hosts: servers
   remote_user: root
   vars:
@@ -24,17 +25,9 @@
         path: '~/.ssh/id_rsa'
       register: idrsa
 
-    # Generate an OpenSSL private key with the default values (4096 bits, RSA)
-    # and no public key
     - name: Generate keys to connect to other machines
       shell: ssh-keygen -t rsa -f ~/.ssh/id_rsa -P ''
       when: idrsa.stat.exists is undefined or idrsa.stat.exists == False
-
-    - name: Install non-root devops users
-      remote_user: root
-      become: yes
-      user: name={{ item }} groups=admin,www-data shell=/bin/bash
-      with_items: "{{ os_users }}"
 
     - name: Add authorized keys for deploy user
       authorized_key: user={{ ubuntu_common_deploy_user_name }}
@@ -47,6 +40,24 @@
                    state=present
                    line='%admin ALL=(ALL) NOPASSWD: ALL'
                    validate='visudo -cf %s'"
+
+    - name: Install non-root devops users
+      remote_user: root
+      become: yes
+      user: name={{ item }} groups=admin,www-data shell=/bin/bash
+      with_items: "{{ os_users }}"
+
+    - name: Disable password login
+      become: yes
+      lineinfile: dest={{ sshd_config }} regexp="^#?PasswordAuthentication" line="PasswordAuthentication yes"
+      when: sshd_pwd_auth is not defined or sshd_pwd_auth != True
+      notify: Restart sshd
+
+    - name: Enable password login
+      become: yes
+      lineinfile: dest={{ ssh_config }} regexp="^#?PasswordAuthentication" line="PasswordAuthentication yes"
+      when: ssh_pwd_auth is defined and ssd_pwd_auth == True
+      notify: Restart sshd
 
     - name: Update APT package cache
       become: yes
@@ -76,25 +87,35 @@
         - { question: 'postfix/mailname', value: '{{ ansible_fqdn }}', vtype: 'string' }
         - { question: 'postfix/main_mailer_type', value: 'Internet Site', vtype: 'string' }
 
+    - name: Check if swap exists
+      stat:
+        path: '/mnt/1GB.swap'
+      register: swap
+
     - name: create the file to be used for swap
       become: yes
       command: fallocate -l 1G /mnt/1GB.swap
+      when: swap.stat.exists is undefined or swap.stat.exists == False
 
     - name: format the file for swap
       become: yes
       command: mkswap /mnt/1GB.swap
+      when: swap.stat.exists is undefined or swap.stat.exists == False
 
     - name: change swap file permissions
       become: yes
       file: path=/mnt/1GB.swap owner=root group=root mode=0600
+      when: swap.stat.exists is undefined or swap.stat.exists == False
 
     - name: add the file to the system as a swap file
       become: yes
       command: swapon /mnt/1GB.swap
+      when: swap.stat.exists is undefined or swap.stat.exists == False
 
     - name: write swap entry in fstab
       become: yes
       mount: name=none src=/mnt/1GB.swap fstype=swap opts=sw passno=0 dump=0 state=present
+      when: swap.stat.exists is undefined or swap.stat.exists == False
 
     - name: Email log summary daily
       become: yes
@@ -109,11 +130,11 @@
                   regexp="^PermitRootLogin"
                   line="PermitRootLogin no"
                   state=present
-      notify: Restart ssh
+      notify: Restart sshd
 
   handlers:
 
-    - name: Restart ssh
+    - name: Restart sshd
       service: name=ssh state=restarted
 
     #- name: TODO Set locale (edit /etc/default/locale)
