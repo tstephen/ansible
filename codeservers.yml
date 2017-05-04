@@ -2,8 +2,28 @@
 - hosts: codeservers
   become: yes
   vars:
+    reqd_packages:
+      - ansible
+      - git
+      - software-properties-common
+      - unzip
 
-  tasks: 
+  tasks:
+
+    # This adds the repo but not the key - chocolate teapot!
+    #- name: Add Ansible repository into sources list
+    #  apt_repository:
+    #    repo: deb http://ppa.launchpad.net/ansible/ansible/ubuntu xenial main
+    #    state: present
+
+    - name: Add Ansible repository into sources list
+      become: yes
+      command: apt-add-repository ppa:ansible/ansible
+
+    - name: Ensure pre-reqs for ansible management
+      become: yes
+      apt: state=installed pkg={{ item }} update_cache=yes
+      with_items: "{{ reqd_packages }}"
 
     # Create job like 34 4 * * * certbot-auto renew --quiet --no-self-upgrade
     #- name: crontab to autorenew certs
@@ -36,7 +56,7 @@
         name: pyapi-gitlab
 
     # Unfortunately cannot use this as it disables issues, both when set 
-    # explicitly and also is ommitted (default is supposed to be True)
+    # explicitly and also if ommitted (default is supposed to be True)
     #- name: Create Gitlab Project in group Omny
     #  gitlab_project:
     #    server_url: http://code.knowprocess.com
