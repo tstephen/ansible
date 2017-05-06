@@ -10,7 +10,7 @@ Sensitive stuff is encrypted with http://docs.ansible.com/ansible/playbooks_vaul
 
 == Run playbook
 
-  ansible-playbook --vault-password-file ~/.vault_pass.txt playbook.yml
+  ansible-playbook --vault-password-file ~/.vault_pass.txt --user tstephen playbook.yml
 
 == Overview of files and their purpose
 
@@ -24,8 +24,14 @@ ansible-vault --vault-password-file ~/.vault_pass.txt edit ansible/inventory/hos
 
 === Playbooks
 
+  INFO: On new droplets this playbook needs to be run with `--user root`. It includes creating a new remote user for future access. That username is defined in ansible/inventory/group_vars/servers.
+
 * **ubuntu.yml:** Basic system setup
+
+  INFO: The remaining playbooks should be run with the ssh user defined in the servers file above
 
 * **dbservers.yml:** Install and configure MySQL
 
 * **wordpress.yml:** Install / check configuration of a site
+
+* **boot-apps.yml:** Install and configure a Spring Boot app

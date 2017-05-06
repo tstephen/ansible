@@ -15,6 +15,14 @@
         mode: 0755
         backup: yes
 
+    - name: Create app config dir if not existing and set permissions
+      file:
+        path: '/etc/{{ app_id }}/conf'
+        state: directory
+        owner: root
+        group: root
+        mode: 0644
+
     - name: Create environment script
       template:
         src: src/templates/app-env.sh.j2
@@ -23,6 +31,14 @@
         group: root
         mode: 0644
         backup: yes
+
+    - name: Create app install dir if not existing and set permissions
+      file:
+        path: '/opt/{{ app_id }}/bin'
+        state: directory
+        owner: "{{ ansible_ssh_user }}"
+        group: admin
+        mode: 0744
 
     - name: Create restart script
       template:

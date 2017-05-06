@@ -1,0 +1,2 @@
+ssh knowprocess.com "cat ~/backups/daily/{{ tenant_id }}_wp_db.sql.gz" | gunzip | mysql {{tenant_id}}_wp_db
+

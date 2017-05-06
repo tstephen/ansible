@@ -1,7 +1,5 @@
 ---
-#- include: handlers/main.yml
 - hosts: servers
-  remote_user: root
   vars:
     ubuntu_common_deploy_public_keys:
       - ~/.ssh/id_rsa.pub
@@ -14,11 +12,17 @@
       - vim
 
   tasks:
+    - name: Test if non-root user exists
+      local_action: "command ssh -q -o BatchMode=yes -o ConnectTimeout=3 {{ inventory_hostname }} 'echo ok'"
+      register: test_user
+      ignore_errors: true
+      changed_when: false
 
     - name: Install non-root user for administration
       remote_user: root
       become: yes
       user: name={{ ubuntu_common_deploy_user_name }} groups=admin,www-data shell=/bin/bash
+      when: test_user|failure
 
     - name: Check if keys exist
       stat:

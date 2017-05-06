@@ -126,10 +126,19 @@
         dest: '/var/tmp/wordpress-{{ tenant_id }}.sql'
         mode: 0644
 
+    - name: Create WP scripts dir
+      become: yes
+      file:
+        path: '/opt/wordpress/bin'
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: 0770
+
     - name: Create remote WP DB backup script
       template:
         src: src/templates/wp-db-remote-backup.sh.j2
-        dest: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-wp-db-remote-backup.sh'
+        dest: '/opt/wordpress/bin/{{ tenant_id }}-wp-db-remote-backup.sh'
         owner: "{{ ansible_ssh_user }}"
         group: www-data
         mode: 0744
@@ -140,13 +149,13 @@
         name: "remote backup {{ tenant_id }}_wp_db"
         minute: "0"
         hour: "5"
-        job: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-wp-db-remote-backup.sh'
+        job: '/opt/wordpress/bin/{{ tenant_id }}-wp-db-remote-backup.sh'
         user: "{{ ansible_ssh_user }}"
 
     - name: Create WP DB backup script
       template:
         src: src/templates/wp-db-backup.sh.j2
-        dest: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-wp-db-backup.sh'
+        dest: '/opt/wordpress/bin/{{ tenant_id }}-wp-db-backup.sh'
         owner: "{{ ansible_ssh_user }}"
         group: www-data
         mode: 0744
@@ -157,8 +166,16 @@
         name: "backup {{ tenant_id }}_wp_db"
         minute: "0"
         hour: "19"
-        job: '/home/{{ ansible_ssh_user }}/{{ tenant_id }}-wp-db-backup.sh'
+        job: '/opt/wordpress/bin/{{ tenant_id }}-wp-db-backup.sh'
         user: "{{ ansible_ssh_user }}"
+
+    - name: Create remote WP DB restore script
+      template:
+        src: src/templates/wp-db-remote-restore.sh.j2
+        dest: '/opt/wordpress/bin/{{ tenant_id }}-wp-db-remote-restore.sh'
+        owner: "{{ ansible_ssh_user }}"
+        group: www-data
+        mode: 0744
 
     - name: Create WP move script
       become: yes
@@ -253,6 +270,7 @@
     - name: Check Omny config
       stat:
         path: '{{ wp_dir }}/wp-content/themes/{{ tenant_id }}/tenant-config.json'
+      when: omny_tenant is defined and omny_tenant == True
       register: omnyconfig
 
     - name: Create basic Omny config
@@ -264,7 +282,7 @@
         owner: www-data
         group: www-data
         mode: 0664
-      when: omnyconfig.stat.exists is undefined or omnyconfig.stat.exists == False
+      when: omny_tenant is defined and omny_tenant == True and (omnyconfig.stat.exists is undefined or omnyconfig.stat.exists == False)
 
     - name: Remove default WP plugin 'dolly'
       become: yes
