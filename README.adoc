@@ -22,6 +22,18 @@ Sensitive stuff is encrypted with http://docs.ansible.com/ansible/playbooks_vaul
 ansible-vault --vault-password-file ~/.vault_pass.txt edit ansible/inventory/hosts
 ----
 
+. or variables for a group `servers`...
+
+----
+ansible-vault --vault-password-file ~/.vault_pass.txt edit ansible/inventory/group_vars/servers
+----
+
+. or variables for a particular machine ... 
+
+----
+ansible-vault --vault-password-file ~/.vault_pass.txt edit ansible/inventory/host_vars/test.knowprocess.com
+----
+
 === Playbooks
 
   INFO: On new droplets this playbook needs to be run with `--user root`. It includes creating a new remote user for future access. That username is defined in ansible/inventory/group_vars/servers.
@@ -34,4 +46,4 @@ ansible-vault --vault-password-file ~/.vault_pass.txt edit ansible/inventory/hos
 
 * **wordpress.yml:** Install / check configuration of a site
 
-* **boot-apps.yml:** Install and configure a Spring Boot app
+* **boot-apps.yml:** Install and configure a Spring Boot app 
