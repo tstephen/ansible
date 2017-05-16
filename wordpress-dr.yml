@@ -1,0 +1,44 @@
+---
+- hosts: wordpress-dr-sites
+  become: yes
+
+  tasks: 
+
+    #- name: Run db restore script
+    #  command: '/opt/wordpress/bin/{{ tenant_id }}-wp-db-remote-restore.sh'
+
+    - name: Run git checkout of theme from custom location
+      git:
+        repo: '{{ wp_git_repo }}'
+        dest: '/var/www-{{ tenant_id }}'
+      when: wp_git_repo is defined
+
+    - name: Move a copy of the current directory to .old directory
+      become_user: root
+      command: 'mv /var/www-{{ tenant_id }} /var/www-{{ tenant_id }}.old'
+      ignore_errors: yes 
+    
+    - name: Create WP docs dir
+      become: yes
+      file:
+        path: '/var/www-{{ tenant_id }}'
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: 0775
+
+    - name: Run git checkout of theme from std location
+      git:
+        repo: 'http://gitium:B37Wo4eLS4Ir@code.knowprocess.com/omny/{{ tenant_id }}.git'
+        dest: '/var/www-{{ tenant_id }}'
+        force: yes
+      when: wp_git_repo is undefined
+
+    - name: Change ownership of wp dir
+      file:
+        path: '/var/www-{{ tenant_id }}'
+        owner: www-data
+        group: www-data
+        mode: 0755
+        state: directory
+        recurse: yes
