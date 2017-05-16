@@ -32,6 +32,12 @@
     #    minute: "34"
     #    hour: "4"
     #    job: "certbot-auto renew --quiet --no-self-upgrade"
+    - name: Create backup dir and assign permissions
+      file:
+        path: '{{ backup_dir }}'
+        owner: tstephen
+        group: admin
+        mode: 775
 
     - name: crontab to rotate db backups weekly
       cron:
@@ -39,7 +45,7 @@
         minute: "30"
         hour: 23
         weekday: 5
-        job: "cp /home/{{ ansible_ssh_user }}/backups/daily/*sql.gz /home/{{ ansible_ssh_user }}/backups/weekly/"
+        job: "cp /{{ backup_dir }}/daily/*sql.gz /home/{{ ansible_ssh_user }}/backups/weekly/"
         user: "{{ ansible_ssh_user }}"
 
     - name: crontab to rotate db backups monthly
@@ -48,14 +54,14 @@
         minute: "30"
         hour: 2
         day: 1
-        job: "cp /home/{{ ansible_ssh_user }}/backups/weekly/*sql.gz /home/{{ ansible_ssh_user }}/backups/monthly/"
+        job: "cp /{{ backup_dir }}/weekly/*sql.gz /home/{{ ansible_ssh_user }}/backups/monthly/"
         user: "{{ ansible_ssh_user }}"
 
     - name: Install the Python Gitlab module
       pip:
         name: pyapi-gitlab
 
-    # Unfortunately cannot use this as it disables issues, both when set 
+    # Unfortunately cannot use this as it disables issues, both when set
     # explicitly and also if ommitted (default is supposed to be True)
     #- name: Create Gitlab Project in group Omny
     #  gitlab_project:
