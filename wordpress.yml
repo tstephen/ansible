@@ -17,6 +17,7 @@
       - /wp-content/uploads
       - /wp-content/upgrades
     wp_plugins:
+      - broken-link-checker.1.11.2.zip
       - gitium.zip
       - jetpack.4.8.2.zip
       - types.2.2.9.zip
@@ -26,6 +27,7 @@
 
 
   tasks:
+
     - name: Ensure pre-reqs for WordPress
       become: yes
       apt: state=installed pkg={{ item }}
@@ -231,17 +233,20 @@
         mode: 0660
       when: wpconfig.stat.exists is undefined or wpconfig.stat.exists == False
 
+    # The regex strips the number suffix so plugins will not be replaced
+    # if they are already present making the play faster. HOWEVER gitium
+    # will be installed every time because it has no numeric suffix
     - name: Install WP plugins
       become: yes
       become_user: www-data
       unarchive:
         src: 'https://downloads.wordpress.org/plugin/{{ item }}'
         dest: '{{ wp_dir }}/wp-content/plugins/'
+        creates: '{{ wp_dir }}/wp-content/plugins/{{ item | regex_replace("([.]\d+)+.zip$","") }}'
         remote_src: True
         owner: www-data
         group: www-data
       with_items: "{{ wp_plugins }}"
-      when: wp.stat.isdir is undefined
 
     - name: Install Omny Link forms plugin
       become: yes
