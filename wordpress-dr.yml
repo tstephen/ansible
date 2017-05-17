@@ -4,8 +4,8 @@
 
   tasks: 
 
-    #- name: Run db restore script
-    #  command: '/opt/wordpress/bin/{{ tenant_id }}-wp-db-remote-restore.sh'
+    - name: Run db restore script
+      command: '/opt/wordpress/bin/{{ tenant_id }}-wp-db-remote-restore.sh'
 
     - name: Run git checkout of theme from custom location
       git:
