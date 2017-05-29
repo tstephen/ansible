@@ -21,6 +21,7 @@
       - gitium.zip
       - jetpack.4.8.2.zip
       - types.2.2.9.zip
+      - wordfence.6.3.9.zip
       - wordpress-importer.0.6.3.zip
 #  roles:
 #    - { role: geerlingguy.mysql }
@@ -247,6 +248,19 @@
         owner: www-data
         group: www-data
       with_items: "{{ wp_plugins }}"
+
+    - name: Install optional WP plugins
+      become: yes
+      become_user: www-data
+      unarchive:
+        src: 'https://downloads.wordpress.org/plugin/{{ item }}'
+        dest: '{{ wp_dir }}/wp-content/plugins/'
+        creates: '{{ wp_dir }}/wp-content/plugins/{{ item | regex_replace("([.]\d+)+.zip$","") }}'
+        remote_src: True
+        owner: www-data
+        group: www-data
+      with_items: "{{ wp_optional_plugins }}"
+      when: wp_optional_plugins is defined
 
     - name: Install Omny Link forms plugin
       become: yes
