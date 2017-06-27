@@ -45,7 +45,7 @@
         minute: "30"
         hour: 23
         weekday: 5
-        job: "cp /{{ backup_dir }}/daily/*sql.gz /home/{{ ansible_ssh_user }}/backups/weekly/"
+        job: "cp /{{ backup_dir }}/daily/*sql.gz /{{ backup_dir }}/backups/weekly/"
         user: "{{ ansible_ssh_user }}"
 
     - name: crontab to rotate db backups monthly
@@ -54,7 +54,7 @@
         minute: "30"
         hour: 2
         day: 1
-        job: "cp /{{ backup_dir }}/weekly/*sql.gz /home/{{ ansible_ssh_user }}/backups/monthly/"
+        job: "cp /{{ backup_dir }}/weekly/*sql.gz /{{ backup_dir }}/backups/monthly/"
         user: "{{ ansible_ssh_user }}"
 
     - name: Install the Python Gitlab module
