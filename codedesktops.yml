@@ -1,0 +1,68 @@
+---
+- hosts: codedesktops
+  vars:
+    reqd_packages:
+      - chromium-browser
+      - freeciv
+      - git
+      - gimp
+      - inkscape
+      - openjdk-8-jdk
+      - pasaffe
+      - shutter
+      - software-properties-common
+      - unzip
+
+  tasks:
+    - name: Check if keys exist
+      stat:
+        path: '/home/tstephen/.ssh/id_rsa'
+      register: idrsa
+
+    - name: Generate keys to connect to other machines
+      shell: ssh-keygen -t rsa -f /home/tstephen/.ssh/id_rsa -P ''
+      when: idrsa.stat.exists is undefined or idrsa.stat.exists == False
+
+    - name: Install packages
+      become: yes
+      apt:
+        state: present
+        name: "{{ item }}"
+      with_items: "{{ reqd_packages }}"
+
+#    - name: Install the Python MySQL module
+#      pip:
+#        name: MySQL-python
+
+    - name: Install Dropbox
+      unarchive:
+        remote_src: True
+        src: "https://www.dropbox.com/download?plat=lnx.x86_64"
+        dest: /home/tstephen/
+        owner: tstephen
+        group: tstephen
+        mode: 0774
+        creates: /home/tstephen/.dropbox-dist
+
+    - name: Start Dropbox
+      shell: /home/tstephen/.dropbox-dist/dropboxd &
+
+    - name: Install Eclipse
+      unarchive:
+        remote_src: True
+        src: http://eclipsemirror.itemis.de/eclipse/technology/epp/downloads/release/oxygen/R/eclipse-java-oxygen-R-linux-gtk-x86_64.tar.gz
+        dest: /home/tstephen/.local/share/
+        owner: tstephen
+        group: tstephen
+        mode: 0774
+        creates: /home/tstephen/.local/share/eclipse/eclipse
+
+    - name: Install Yaoqiang
+      get_url:
+        url: https://sourceforge.net/projects/bpmn/files/latest/download?source=files
+        dest: /home/tstephen/.local/share/
+        owner: tstephen
+        group: tstephen
+        mode: 0550
+
+
