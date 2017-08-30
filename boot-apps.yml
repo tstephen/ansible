@@ -43,7 +43,7 @@
     - name: Create client secret file to permit write to Google drive
       template:
         src: src/templates/goog-secret.j2
-        dest: '/opt/{{ app_id }}/.goog_secret'
+        dest: '/opt/{{ app_id }}/.goog_secret.json'
         owner: "{{ ansible_ssh_user }}"
         group: admin
         mode: 0600
@@ -51,7 +51,7 @@
     - name: Create token file to permit write to Google drive
       template:
         src: src/templates/goog-token.j2
-        dest: '/opt/{{ app_id }}/.goog_token'
+        dest: '/opt/{{ app_id }}/.goog_token.json'
         owner: "{{ ansible_ssh_user }}"
         group: admin
         mode: 0600
