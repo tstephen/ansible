@@ -2,11 +2,16 @@
 - hosts: codedesktops
   vars:
     reqd_packages:
+      - audacity
       - chromium-browser
+      - ffmpeg
       - freeciv
       - git
       - gimp
       - inkscape
+      - maven
+      - nodejs
+      - npm
       - openjdk-8-jdk
       - pasaffe
       - shutter
@@ -57,12 +62,25 @@
         mode: 0774
         creates: /home/tstephen/.local/share/eclipse/eclipse
 
+    - name: Install Node JS
+      become: yes
+      file:
+        src: /usr/bin/nodejs
+        dest: /usr/bin/node
+        state: link
+
+    - name: Install "gulp-cli" node.js package globally.
+      become: yes
+      npm:
+        name: gulp-cli
+        global: yes
+
     - name: Install Yaoqiang
       get_url:
         url: https://sourceforge.net/projects/bpmn/files/latest/download?source=files
         dest: /home/tstephen/.local/share/
         owner: tstephen
         group: tstephen
-        mode: 0550
+        mode: 0666
 
 
