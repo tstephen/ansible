@@ -10,13 +10,16 @@
       - gimp
       - inkscape
       - maven
-      - nodejs
-      - npm
       - openjdk-8-jdk
       - pasaffe
       - shutter
       - software-properties-common
       - unzip
+    scripts:
+      - rm-bom.sh # Remove byte order mark from BPMN files that prevents deployment
+      - trim.sh # Trim all trailing spaces from file
+    yaoqiang_vsn:
+      - 5.3.11
 
   tasks:
     - name: Check if keys exist
@@ -52,6 +55,16 @@
     - name: Start Dropbox
       shell: /home/tstephen/.dropbox-dist/dropboxd &
 
+    #- name: Install InSync for Google Drive syncing
+
+    - name: Setup some utilities
+      become: yes
+      file:
+        src: '/home/tstephen/GDrive/bin/{{ item }}'
+        dest: '/usr/bin/{{ item }}'
+        state: link
+      with_items: "{{ scripts }}"
+
     - name: Install Eclipse
       unarchive:
         remote_src: True
@@ -62,11 +75,28 @@
         mode: 0774
         creates: /home/tstephen/.local/share/eclipse/eclipse
 
-    - name: Install Node JS
+    - name: Install NodeJS from download as package manager is out of date
+      unarchive:
+        remote_src: True
+        src: "https://nodejs.org/dist/v6.11.3/node-v6.11.3-linux-x64.tar.xz"
+        dest: /var/lib
+        owner: root
+        group: root
+        mode: 0774
+        creates: /var/lib/node-v6.11.3-linux-x64
+
+    - name: Setup NodeJS symlink
       become: yes
       file:
-        src: /usr/bin/nodejs
+        src: /var/lib/node-v6.11.3-linux-x64/bin/node
         dest: /usr/bin/node
+        state: link
+
+    - name: Setup NPM symlink
+      become: yes
+      file:
+        src: /var/lib/node-v6.11.3-linux-x64/bin/npm
+        dest: /usr/bin/npm
         state: link
 
     - name: Install "gulp-cli" node.js package globally.
@@ -75,6 +105,11 @@
         name: gulp-cli
         global: yes
 
+    - name: Check if Yaoqiang exists
+      stat:
+        path: '/home/tstephen/.local/share/yaoqiang-bpmn-editor-{{yaoqiang_vsn}}.jar'
+      register: yaoqiang
+
     - name: Install Yaoqiang
       get_url:
         url: https://sourceforge.net/projects/bpmn/files/latest/download?source=files
@@ -82,5 +117,5 @@
         owner: tstephen
         group: tstephen
         mode: 0666
-
+      when: yaoqiang.stat.exists is undefined or yaoqiang.stat.exists == False
 
