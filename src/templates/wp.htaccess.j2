@@ -12,6 +12,8 @@ RewriteRule . /index.php [L]
 # BEGIN Omny
 <IfModule mod_headers.c>
   Header set Access-Control-Allow-Origin "https://api.omny.link"
+  #Header set Access-Control-Allow-Origin "*"
+  Header set Access-Control-Allow-Headers "Accept, Accept-Charset, Accept-Encoding, Accept-Language, Access-Control-Allow-Credentials, Access-Control-Allow-Headers, Access-Control-Allow-Methods, Access-Control-Allow-Origin, Access-Control-Expose-Headers, Access-Control-Max-Age, Access-Control-Request-Headers, Access-Control-Request-Method, Age, Allow, Authentication-Info, Authorization, Cache-Control, Content-Encoding, Content-Language, Content-Length, Content-Type, ETag, Expires, GET, HEAD, If, If-Match, If-Modified-Since, If-None-Match, If-Range, If-Unmodified-Since, Keep-Alive, Last-Modified, Location, OPTION, OPTIONS, Origin, POST, PUT, Pragma, Referer, Refresh, URI, Upgrade, User-Agent, X-Authorization, X-Requested-With"
 </IfModule>
 # END Omny
 
