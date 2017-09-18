@@ -119,3 +119,10 @@
         mode: 0666
       when: yaoqiang.stat.exists is undefined or yaoqiang.stat.exists == False
 
+    - name: crontab to download db backups
+      cron:
+        name: "Download DB backups"
+        minute: "0"
+        hour: "9"
+        job: "scp code.knowprocess.com:/var/backups/daily/*gz /var/backups/mysql"
+
