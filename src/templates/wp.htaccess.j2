@@ -17,3 +17,11 @@ RewriteRule . /index.php [L]
 </IfModule>
 # END Omny
 
+# BEGIN Block XML-RPC requests
+# This is a common attack vector but does disable mobile apps
+<Files xmlrpc.php>
+order deny,allow
+deny from all
+allow from 123.123.123.123
+</Files>
+# END Block XML-RPC
