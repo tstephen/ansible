@@ -19,10 +19,14 @@
     wp_plugins:
       - broken-link-checker.1.11.2.zip
       - gitium.zip
-      - jetpack.4.8.2.zip
-      - types.2.2.9.zip
       - wordfence.6.3.9.zip
       - wordpress-importer.0.6.3.zip
+    wp_unreqd:
+      - plugins/akismet
+      - plugins/hello.php # dolly plugin
+      - themes/twentyfifteen
+      - themes/twentysixteen
+      - themes/twentyseventeen
 #  roles:
 #    - { role: geerlingguy.mysql }
 
@@ -207,7 +211,12 @@
         mode: 0775
       with_items: "{{ wp_dirs }}"
 
-    - name: Setup .htaccess file
+    - name: Check if WP .htaccess exists
+      stat:
+        path: '{{ wp_dir }}/.htaccess'
+      register: wphtaccess
+
+    - name: Setup .htaccess file if missing
       become: yes
       template:
         src: src/templates/wp.htaccess.j2
@@ -215,6 +224,32 @@
         owner: www-data
         group: www-data
         mode: 0660
+      when: wphtaccess.stat.exists is undefined or wphtaccess.stat.exists == False
+
+    - name: Block XML-RPC in pre-existing htaccess
+      blockinfile:
+        path: '{{ wp_dir }}/.htaccess'
+        marker: "# ANSIBLE Block XML-RPC requests"
+        content: |
+          # This is a common attack vector but does disable mobile apps
+          <Files xmlrpc.php>
+            order deny,allow
+            deny from all
+            allow from 123.123.123.123
+          </Files>
+      when: wphtaccess.stat.exists == True
+
+    - name: Allow Omny cross site access in pre-existing htaccess
+      blockinfile:
+        path: '{{ wp_dir }}/.htaccess'
+        marker: "# ANSIBLE configure Omny"
+        content: |
+          <IfModule mod_headers.c>
+            Header set Access-Control-Allow-Origin "https://api.omny.link"
+            #Header set Access-Control-Allow-Origin "*"
+            Header set Access-Control-Allow-Headers "Accept, Accept-Charset, Accept-Encoding, Accept-Language, Access-Control-Allow-Credentials, Access-Control-Allow-Headers, Access-Control-Allow-Methods, Access-Control-Allow-Origin, Access-Control-Expose-Headers, Access-Control-Max-Age, Access-Control-Request-Headers, Access-Control-Request-Method, Age, Allow, Authentication-Info, Authorization, Cache-Control, Content-Encoding, Content-Language, Content-Length, Content-Type, ETag, Expires, GET, HEAD, If, If-Match, If-Modified-Since, If-None-Match, If-Range, If-Unmodified-Since, Keep-Alive, Last-Modified, Location, OPTION, OPTIONS, Origin, POST, PUT, Pragma, Referer, Refresh, URI, Upgrade, User-Agent, X-Authorization, X-Requested-With"
+          </IfModule>
+      when: wphtaccess.stat.exists == True
 
     - name: Check WP config
       stat:
@@ -303,21 +338,10 @@
         mode: 0664
       when: omny_tenant is defined and omny_tenant == True and (omnyconfig.stat.exists is undefined or omnyconfig.stat.exists == False)
 
-    - name: Remove default WP plugin 'dolly'
+    - name: Remove unrequired WP plugins & themes
       become: yes
-      file: path='{{ wp_dir }}/wp-content/plugins/hello.php' state=absent
-
-    - name: Remove default WP plugin 'akismet'
-      become: yes
-      file: path='{{ wp_dir }}/wp-content/plugins/akismet' state=absent
-
-    - name: Remove default WP theme 'twentyfifteen'
-      become: yes
-      file: path='{{ wp_dir }}/wp-content/themes/twentyfifteen' state=absent
-
-    - name: Remove default WP theme 'twentysixteen'
-      become: yes
-      file: path='{{ wp_dir }}/wp-content/themes/twentysixteen' state=absent
+      file: path='{{ wp_dir }}/wp-content/{{ item }}' state=absent
+      with_items: "{{ wp_unreqd }}"
 
     - name: Init git repo
       become_user: www-data
