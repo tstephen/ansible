@@ -46,7 +46,7 @@
                    validate='visudo -cf %s'"
 
     - name: Install non-root devops users
-      remote_user: root
+      remote_user: "{{ ubuntu_common_deploy_user_name }}"
       become: yes
       user: name={{ item }} groups=admin,www-data shell=/bin/bash
       with_items: "{{ os_users }}"
