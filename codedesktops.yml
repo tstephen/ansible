@@ -1,5 +1,5 @@
 ---
-- hosts: codedesktops
+- hosts: codedesktops,localhost
   vars:
     reqd_packages:
       - audacity
@@ -15,6 +15,9 @@
       - shutter
       - software-properties-common
       - unzip
+    links:
+      - eclipse-oxygen.desktop
+      - yaoqiang.desktop
     scripts:
       - rm-bom.sh # Remove byte order mark from BPMN files that prevents deployment
       - trim.sh # Trim all trailing spaces from file
@@ -75,7 +78,16 @@
         mode: 0774
         creates: /home/tstephen/.local/share/eclipse/eclipse
 
+    - name: Setup desktop links
+      become: yes
+      file:
+        src: '/home/tstephen/GDrive/config/_local_share_applications/{{ item }}'
+        dest: '/usr/bin/{{ item }}'
+        state: link
+      with_items: "{{ links }}"
+
     - name: Install NodeJS from download as package manager is out of date
+      become: yes
       unarchive:
         remote_src: True
         src: "https://nodejs.org/dist/v6.11.3/node-v6.11.3-linux-x64.tar.xz"
