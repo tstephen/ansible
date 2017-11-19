@@ -1,0 +1,45 @@
+---
+- hosts: nextcloud
+  vars:
+    reqd_packages:
+
+  tasks:
+    - name: Install nextcloud snap package
+      become: yes
+      command: "snap install nextcloud"
+
+    - name: Configure nextcloud admin account
+      become: yes
+      command: "nextcloud.manual-install {{nextcloud_user}} {{nextcloud_pass}}"
+      ignore_errors: true
+
+    - name: Configure nextcloud domain and ip address
+      become: yes
+      shell: "nextcloud.occ config:system:set trusted_domains 1 --value=46.101.78.223"
+      ignore_errors: true
+
+    - name: Configure nextcloud domain and ip address
+      become: yes
+      shell: "nextcloud.occ config:system:set trusted_domains 2 --value=cloud.knowprocess.com"
+      ignore_errors: true
+
+      # Has to be done interactively?
+      #- name: Configure nextcloud to use letsencrypt
+      #become: yes
+      #shell: "nextcloud.enable-https lets-encrypt"
+      #ignore_errors: true
+
+    - name: Configure nextcloud calendar
+      become: yes
+      shell: "nextcloud.occ app:enable calendar"
+
+    - name: Configure nextcloud collabora
+      become: yes
+      shell: "nextcloud.occ app:enable documents"
+
+    - name: Configure nextcloud markdown editor
+      become: yes
+      shell: "nextcloud.occ app:enable files_markdown"
+ 
+# References:
+#  - https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-nextcloud-on-ubuntu-16-04
