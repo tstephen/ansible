@@ -1,0 +1,61 @@
+---
+#
+# Install mail server as described at: 
+#   https://thomas-leister.de/mailserver-unter-ubuntu-16.04/ 
+#   https://github.com/ROCK5GmbH/ansible-mailserver
+# Make sure have roles first:
+#   ansible-galaxy install ROCK5GmbH.mailserver
+- hosts: mailservers
+  become: yes
+  roles:
+    - ROCK5GmbH.mailserver
+  vars:
+    reqd_packages:
+
+  tasks:
+    - name: Install CertBot for certificate install and renewal
+      become: yes
+      get_url:
+        url: https://dl.eff.org/certbot-auto
+        dest: /usr/bin
+        mode: a+x
+
+     #- name: Run CertBot (needs to be manually for now as it downloads other packages)
+     #  shell: certbot-auto certonly
+
+    # Create job like 34 4 * * * certbot-auto renew --quiet --no-self-upgrade
+    - name: crontab to autorenew certs
+      cron:
+        name: "Renew letsencrypt certificates regularly"
+        minute: "34"
+        hour: "4"
+        job: "certbot-auto renew --quiet --no-self-upgrade"
+
+    - name: Ensure db user exists
+      mysql_user:
+        login_user: 'root'
+        login_password: '{{ dbserver_root_pw }}'
+        name: '{{ app_db_user }}'
+        password: '{{ app_db_pass }}'
+        priv: 'vmail.*:ALL'
+        state: present
+
+    - name: Check mysql config
+      stat:
+        path: '/home/{{ ansible_ssh_user }}/.my.cnf'
+      register: mycnf
+
+    - name: Create client my.cnf for user
+      template:
+        src: src/templates/user-my.cnf.j2
+        dest: '/home/{{ ansible_ssh_user }}/.my.cnf'
+        owner: "{{ ansible_ssh_user }}"
+        mode: 0700
+      when: mycnf.stat.isdir is undefined
+
+    - name: Insert mail domain in db
+      command: mysql vmail -e "insert into domains (domain) values ('{{ mailserver_domain }}')";
+
+    - name: Insert mail domain in db
+      command: mysql vmail -e "insert into accounts (username, domain, password, quota, enabled, sendonly) values ('{{ mailserver_admin }}','{{ mailserver_domain }}','{{ mailserver_admin_pwd }}',2048, true, false)";
+

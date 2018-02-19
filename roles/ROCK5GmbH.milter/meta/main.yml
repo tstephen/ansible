@@ -1,0 +1,24 @@
+---
+galaxy_info:
+  author: Christoph Wolff, Norbert Ronecker
+  description: This role installs Amavis, ClamAV, OpenDKIM and Spamassassin
+  company: ROCK5
+  license: MIT
+
+  min_ansible_version: 1.2
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - trusty
+
+  galaxy_tags:
+    - mail
+    - mailserver
+    - spamassassin
+    - amavis
+    - dkim
+    - clamav
+    
+dependencies:
+    - ROCK5GmbH.dbserver

@@ -1,0 +1,14 @@
+milter_amavis_socket: "/var/run/amavis/amavisd.sock"
+milter_amavis_milter_socket: "/var/run/amavis/amavisd-milter.sock"
+milter_sql_db: vmail
+milter_sql_host: 127.0.0.1
+milter_sql_port: 3306
+milter_sql_user: vmail
+
+milter_dkim_keys_dir: /etc/opendkim/keys
+milter_dkim_key_file: key
+milter_dkim_group: vmail
+
+milter_spamass_db: spamassassin
+milter_spamass_user: spamass
+milter_spamass_user_override: vmail

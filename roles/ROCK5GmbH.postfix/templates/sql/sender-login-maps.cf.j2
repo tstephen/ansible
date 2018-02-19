@@ -1,0 +1,5 @@
+user = {{ postfix_sql_user }}
+password = {{ postfix_sql_user_password }}
+hosts = {{ postfix_sql_host }}:{{ postfix_sql_port }}
+dbname = {{ postfix_sql_db }}
+query = select concat(username, '@', domain) as 'owns' from accounts where username = '%u' AND domain = '%d' and enabled = true union select concat(destination_username, '@', destination_domain) AS 'owns' from aliases where source_username = '%u' and source_domain = '%d' and enabled = true;

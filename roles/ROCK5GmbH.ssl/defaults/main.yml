@@ -1,0 +1,9 @@
+---
+ssl_cert_country: US
+ssl_cert_state: California
+ssl_cert_city: Santa Clara
+ssl_cert_organization: IT
+ssl_cert_lifetime: 365
+ssl_directory: "/etc/myssl"
+ssl_cert_path: "{{ ssl_directory }}/{{ ssl_cert_cn }}.crt"
+ssl_key_path: "{{ ssl_directory }}/{{ ssl_cert_cn }}.key"

@@ -1,0 +1,16 @@
+---
+postfix_user: postfix
+postfix_group: postfix
+
+# Mail queue settings for postfix, see http://www.postfix.org/postconf.5.html
+# for more details
+postfix_max_queue_life: 1h
+postfix_bnc_queue_life: 1h
+postfix_max_backoff_time: 15m
+postfix_min_backoff_time: 5m
+postfix_queue_run_delay: 5m
+
+postfix_sql_db: vmail
+postfix_sql_user: vmail
+postfix_sql_host: "127.0.0.1"
+postfix_sql_port: 3306

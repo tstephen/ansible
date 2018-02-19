@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  author: Christoph Wolff, Norbert Ronecker
+  description: This role installs a database server, MariaDB or MySQL.
+  company: ROCK5
+  license: MIT
+
+  min_ansible_version: 1.2
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - trusty
+
+  galaxy_tags:
+    - sql
+    - mysql
+    - mariadb
+    - database
+    
+dependencies: []

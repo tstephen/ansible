@@ -1,0 +1,5 @@
+user = {{ postfix_sql_user }}
+password = {{ postfix_sql_user_password }}
+hosts = {{ postfix_sql_host }}:{{ postfix_sql_port }}
+dbname = {{ postfix_sql_db }}
+query = select if(sendonly = true, 'REJECT', 'OK') AS access from accounts where username = '%u' and domain = '%d' and enabled = true LIMIT 1;

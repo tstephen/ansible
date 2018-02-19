@@ -1,0 +1,44 @@
+---
+- name: Set MySQL root password before Package Installation
+  debconf: name='mysql-server' question='mysql-server/root_password' value='{{dbserver_root_pw | quote}}' vtype='password'
+  changed_when: false # Suppress "changed" status
+  when: mariadb is undefined
+- name: Confirm MySQL root password before installing
+  debconf: name='mysql-server' question='mysql-server/root_password_again' value='{{dbserver_root_pw | quote}}' vtype='password'
+  changed_when: false # Suppress "changed" status
+  when: mariadb is undefined
+
+- name: Install MySQL packages and tools
+  apt: pkg={{ item }} update_cache=yes state=present
+  when: mariadb is undefined
+  with_items:
+    - mysql-server
+    - mysql-client
+    - python-mysqldb
+    - libdbi-perl
+    - libdbd-mysql-perl
+  notify:
+    - start mysql/mariadb server
+
+- name: Set MariaDB root password before Package Installation
+  debconf: name='mariadbserver' question='mariadbserver/root_password' value='{{dbserver_root_pw | quote}}' vtype='password'
+  changed_when: false # Suppress "changed" status
+  when: mariadb is defined
+
+- name: Confirm MariaDB root password before installing
+  debconf: name='mariadbserver' question='mariadbserver/root_password_again' value='{{dbserver_root_pw | quote}}' vtype='password'
+  changed_when: false # Suppress "changed" status
+  when: mariadb is defined
+
+- name: Install MariaDB packages and tools
+  apt: pkg={{ item }} update_cache=yes cache_valid_time=36000 state=present
+  when: mariadb is defined
+  with_items:
+    - mariadb-server
+    - mariadb-client
+    - python-mysqldb
+  notify:
+    - start mysql/mariadb server
+
+- name: Push client configuration for root user
+  template: src=my.cnf.j2 dest=/root/.my.cnf owner=root group=root mode=0600
