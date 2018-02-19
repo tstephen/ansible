@@ -1,4 +1,11 @@
 ---
+#
+# THIS PLAYBOOK SHOULD BE RUN ON NEW SERVERS BEFORE ANY SPECIALISATION
+#
+# - Before running check ssh connectivity
+# - on Ubuntu 16.04 link python3 to python, e.g.
+#     ln -s /usr/bin/python3.5 /usr/bin/python
+# - First run should be with --user root
 - hosts: servers
   vars:
     ubuntu_common_deploy_public_keys:
@@ -66,7 +73,16 @@
 
     - name: Update APT package cache
       become: yes
-      apt: update_cache=yes cache_valid_time=3600
+      apt:
+        upgrade: yes
+        update_cache: yes
+        #    cache_valid_time: 3600
+
+    # Found that fail2ban will not install on 16.04 without doing thismanually
+    #- name: Upgrade packages
+    #  become: yes
+    #  apt:
+    #    upgrade: dist
 
     - name: Install required packages
       become: yes

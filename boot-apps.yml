@@ -1,10 +1,18 @@
 ---
 - hosts: boot-apps
   become: yes
-
+  vars:
+    reqd_packages:
+      - vim
+      - openjdk-8-jre-headless
   roles:
 
   tasks:
+    - name: Ensure pre-reqs for Spring Boot apps
+      become: yes
+      apt: state=installed pkg={{ item }}
+      with_items: "{{ reqd_packages }}"
+
 
     - name: Create init script
       template:
@@ -32,6 +40,14 @@
         mode: 0644
         backup: yes
 
+    - name: Create systemd unit
+      template:
+        src: src/templates/app-service.j2
+        dest: /etc/systemd/system/{{ app_id }}.service
+        owner: root
+        group: root
+        mode: 0644
+
     - name: Create app install dir if not existing and set permissions
       file:
         path: '/opt/{{ app_id }}/bin'
@@ -56,10 +72,26 @@
         group: admin
         mode: 0600
 
+    - name: Create start script
+      template:
+        src: src/templates/app-start.sh.j2
+        dest: /opt/{{ app_id }}/bin/{{ app_id }}-start.sh
+        owner: "{{ ansible_ssh_user }}"
+        group: admin
+        mode: 0744
+
+    - name: Create stop script
+      template:
+        src: src/templates/app-stop.sh.j2
+        dest: /opt/{{ app_id }}/bin/{{ app_id }}-stop.sh
+        owner: "{{ ansible_ssh_user }}"
+        group: admin
+        mode: 0744
+
     - name: Create restart script
       template:
         src: src/templates/app-restart.sh.j2
-        dest: /opt/{{ app_id }}/bin/{{ app_id }}-restart
+        dest: /opt/{{ app_id }}/bin/{{ app_id }}-restart.sh
         owner: "{{ ansible_ssh_user }}"
         group: admin
         mode: 0744
@@ -97,12 +129,18 @@
         group: admin
         mode: 0744
 
+    - name: Check mysql config
+      stat:
+        path: '/home/{{ ansible_ssh_user }}/.my.cnf'
+      register: mycnf
+
     - name: Create client my.cnf for user
       template:
         src: src/templates/user-my.cnf.j2
         dest: '/home/{{ ansible_ssh_user }}/.my.cnf'
         owner: "{{ ansible_ssh_user }}"
         mode: 0700
+      when: mycnf.stat.isdir is undefined
 
     # Creates an job like "0 5 * * * /opt/foo/db-backup.sh"
     - name: Ensure cron job for db backup exists

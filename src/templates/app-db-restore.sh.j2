@@ -1,5 +1,1 @@
 ssh {{ backup_server }} "cat {{ backup_dir }}/daily/{{ app_db }}.sql.gz" | gunzip | mysql {{ app_db }}
-
-ssh {{ backup_server }} "cat {{ backup_dir }}/daily/{{ app_id }}_act_dump.sql.gz" | gunzip | mysql {{ app_db }}
-
-ssh {{ backup_server }} "cat {{ backup_dir }}/daily/{{ app_id }}_act_hi_dump.sql.gz" | gunzip | mysql {{ app_db }}

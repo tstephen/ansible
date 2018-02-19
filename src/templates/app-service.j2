@@ -1,0 +1,13 @@
+[Unit]
+Description = {{ app_id }} server
+Requires = mysql.service
+[Service]
+Type = forking
+WorkingDirectory = /opt/{{ app_id }}
+ExecStart = /opt/kp/bin/{{ app_id }}-start.sh
+ExecStop = /opt/kp/bin/{{ app_id }}-stop.sh
+Restart=on-failure
+LimitNOFILE=10000
+[Install]
+WantedBy = multi-user.target
+

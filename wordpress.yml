@@ -5,11 +5,11 @@
     reqd_packages:
       - apache2
       - git
-      - libapache2-mod-php5
-      - php5
-      - php5-curl
-      - php5-mcrypt
-      - php5-mysql
+      - libapache2-mod-php
+      - php
+      - php-curl
+      - php-mcrypt
+      - php-mysql
       - python-pip
       - unzip
     wp_dirs:
@@ -18,7 +18,7 @@
       - /wp-content/upgrades
     wp_plugins:
       - broken-link-checker.1.11.2.zip
-      - gitium.zip
+      #- gitium.zip
       - wordfence.6.3.9.zip
       - wordpress-importer.0.6.3.zip
     wp_unreqd:
@@ -239,18 +239,6 @@
           </Files>
       when: wphtaccess.stat.exists == True
 
-    - name: Allow Omny cross site access in pre-existing htaccess
-      blockinfile:
-        path: '{{ wp_dir }}/.htaccess'
-        marker: "# ANSIBLE configure Omny"
-        content: |
-          <IfModule mod_headers.c>
-            Header set Access-Control-Allow-Origin "https://api.omny.link"
-            #Header set Access-Control-Allow-Origin "*"
-            Header set Access-Control-Allow-Headers "Accept, Accept-Charset, Accept-Encoding, Accept-Language, Access-Control-Allow-Credentials, Access-Control-Allow-Headers, Access-Control-Allow-Methods, Access-Control-Allow-Origin, Access-Control-Expose-Headers, Access-Control-Max-Age, Access-Control-Request-Headers, Access-Control-Request-Method, Age, Allow, Authentication-Info, Authorization, Cache-Control, Content-Encoding, Content-Language, Content-Length, Content-Type, ETag, Expires, GET, HEAD, If, If-Match, If-Modified-Since, If-None-Match, If-Range, If-Unmodified-Since, Keep-Alive, Last-Modified, Location, OPTION, OPTIONS, Origin, POST, PUT, Pragma, Referer, Refresh, URI, Upgrade, User-Agent, X-Authorization, X-Requested-With"
-          </IfModule>
-      when: wphtaccess.stat.exists == True
-
     - name: Check WP config
       stat:
         path: '{{ wp_dir }}/wp-config.php'
@@ -356,11 +344,11 @@
         chdir: "{{ wp_dir }}"
       register: origin
 
-    - name: Setup origin for git
-      command: git remote add origin http://gitium:{{ gitium_pass }}@code.knowprocess.com/omny/{{ tenant_id }}
-      args:
-        chdir: "{{ wp_dir }}"
-      when: origin.stdout != 'origin'
+    #- name: Setup origin for git
+    #  command: git remote add origin http://gitium:{{ gitium_pass }}@code.knowprocess.com/omny/{{ tenant_id }}
+    #  args:
+    #    chdir: "{{ wp_dir }}"
+    #  when: origin.stdout != 'origin'
 
     - name: Add WP files to git
       command: git add {{ wp_dir }}
