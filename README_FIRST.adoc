@@ -1,0 +1,9 @@
+README FIRST
+============
+
+To bootstrap Ansible on a new Debian/Ubuntu derivative:
+
+```
+sudo apt install python3-pip
+sudo pip3 install ansible
+```

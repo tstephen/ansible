@@ -1,15 +1,19 @@
 ---
 - hosts: codedesktops,localhost
   vars:
+    dropbox_state:
+      - False
     reqd_packages:
       - audacity
       - chromium-browser
+      - docker
       - ffmpeg
       - freeciv
       - git
       - gimp
       - inkscape
       - maven
+      - nextcloud-desktop
       - openjdk-8-jdk
       - pasaffe
       - shutter
@@ -21,6 +25,8 @@
     scripts:
       - rm-bom.sh # Remove byte order mark from BPMN files that prevents deployment
       - trim.sh # Trim all trailing spaces from file
+    snaps:
+      - vscode
     yaoqiang_vsn:
       - 5.3.11
 
@@ -34,16 +40,26 @@
       shell: ssh-keygen -t rsa -f /home/tstephen/.ssh/id_rsa -P ''
       when: idrsa.stat.exists is undefined or idrsa.stat.exists == False
 
+    - name: Add shutter repository # Since 18.10 shutter no longer in provided repos
+      become: yes
+      apt_repository: repo='ppa:linuxuprising/shutter' state=present
+
     - name: Install packages
       become: yes
       apt:
         state: present
-        name: "{{ item }}"
-      with_items: "{{ reqd_packages }}"
+        name: "{{ reqd_packages }}"
 
 #    - name: Install the Python MySQL module
 #      pip:
 #        name: MySQL-python
+
+    # Install snaps
+    - name: Install snaps
+      become: yes
+      snap:
+        name: '{{ snaps }}'
+        classic: yes
 
     - name: Install Dropbox
       unarchive:
@@ -54,11 +70,18 @@
         group: tstephen
         mode: 0774
         creates: /home/tstephen/.dropbox-dist
+      when: dropbox_state == True
 
     - name: Start Dropbox
       shell: /home/tstephen/.dropbox-dist/dropboxd &
+      when: dropbox_state == True
 
     #- name: Install InSync for Google Drive syncing
+
+    - name: Check if GDrive exists
+      stat:
+        path: '/home/tstephen/GDrive'
+      register: gdrive
 
     - name: Setup some utilities
       become: yes
@@ -67,16 +90,7 @@
         dest: '/usr/bin/{{ item }}'
         state: link
       with_items: "{{ scripts }}"
-
-    - name: Install Eclipse
-      unarchive:
-        remote_src: True
-        src: http://eclipsemirror.itemis.de/eclipse/technology/epp/downloads/release/oxygen/R/eclipse-java-oxygen-R-linux-gtk-x86_64.tar.gz
-        dest: /home/tstephen/.local/share/
-        owner: tstephen
-        group: tstephen
-        mode: 0774
-        creates: /home/tstephen/.local/share/eclipse/eclipse
+      when: gdrive.stat.exists == True
 
     - name: Setup desktop links
       become: yes
@@ -85,29 +99,52 @@
         dest: '/usr/bin/{{ item }}'
         state: link
       with_items: "{{ links }}"
+      when: gdrive.stat.exists == True
+
+    - name: Check if nextcloud exists
+      stat:
+        path: '/home/tstephen/nextcloud'
+      register: nextcloud
+
+    - name: Link password safe
+      file:
+        src: '/home/tstephen/nextcloud/Documents/yaps2013.psafe3'
+        dest: '/home/tstephen/.local/share/pasaffe/pasaffe.psafe3'
+        state: link
+      when: nextcloud.stat.exists == True
+
+    #- name: Install Eclipse
+    # unarchive:
+    #   remote_src: True
+    #   src: 'https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/2019-09/R/eclipse-java-2019-09-R-linux-gtk-x86_64.tar.gz'
+    #   dest: /home/tstephen/.local/share/
+    #   owner: tstephen
+    #   group: tstephen
+    #   mode: 0774
+    #   creates: /home/tstephen/.local/share/eclipse/eclipse
 
     - name: Install NodeJS from download as package manager is out of date
       become: yes
       unarchive:
         remote_src: True
-        src: "https://nodejs.org/dist/v6.11.3/node-v6.11.3-linux-x64.tar.xz"
+        src: 'https://nodejs.org/dist/latest-v10.x/node-v10.17.0-linux-x64.tar.gz'
         dest: /var/lib
         owner: root
         group: root
         mode: 0774
-        creates: /var/lib/node-v6.11.3-linux-x64
+        creates: /var/lib/node-v10.17.0-linux-x64
 
     - name: Setup NodeJS symlink
       become: yes
       file:
-        src: /var/lib/node-v6.11.3-linux-x64/bin/node
+        src: /var/lib/node-v10.17.0-linux-x64/bin/node
         dest: /usr/bin/node
         state: link
 
     - name: Setup NPM symlink
       become: yes
       file:
-        src: /var/lib/node-v6.11.3-linux-x64/bin/npm
+        src: /var/lib/node-v10.17.0-linux-x64/bin/npm
         dest: /usr/bin/npm
         state: link
 
@@ -122,14 +159,14 @@
         path: '/home/tstephen/.local/share/yaoqiang-bpmn-editor-{{yaoqiang_vsn}}.jar'
       register: yaoqiang
 
-    - name: Install Yaoqiang
-      get_url:
-        url: https://sourceforge.net/projects/bpmn/files/latest/download?source=files
-        dest: /home/tstephen/.local/share/
-        owner: tstephen
-        group: tstephen
-        mode: 0666
-      when: yaoqiang.stat.exists is undefined or yaoqiang.stat.exists == False
+   #- name: Install Yaoqiang
+   #  get_url:
+   #    url: https://sourceforge.net/projects/bpmn/files/latest/download?source=files
+   #    dest: /home/tstephen/.local/share/
+   #    owner: tstephen
+   #    group: tstephen
+   #    mode: 0666
+   #  when: yaoqiang.stat.exists is undefined or yaoqiang.stat.exists == False
 
     - name: crontab to download db backups
       cron:
