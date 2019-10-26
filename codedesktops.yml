@@ -26,6 +26,7 @@
       - rm-bom.sh # Remove byte order mark from BPMN files that prevents deployment
       - trim.sh # Trim all trailing spaces from file
     snaps:
+      - qownnotes
       - vscode
     yaoqiang_vsn:
       - 5.3.11
