@@ -1,0 +1,102 @@
+---
+- hosts: desktops,localhost
+  vars:
+    dropbox_state:
+      - False
+    links:
+    reqd_packages:
+      - audacity
+      - chromium-browser
+      - ffmpeg
+      - freeciv
+      - gimp
+      - inkscape
+      - nextcloud-desktop
+      - pasaffe
+      - shutter
+      - software-properties-common
+      - unzip
+    snaps:
+      - foliate
+      - qownnotes
+      - vscode
+
+  tasks:
+    - name: Check if keys exist
+      stat:
+        path: '/home/tstephen/.ssh/id_rsa'
+      register: idrsa
+
+    - name: Generate keys to connect to other machines
+      shell: ssh-keygen -t rsa -f /home/tstephen/.ssh/id_rsa -P ''
+      when: idrsa.stat.exists is undefined or idrsa.stat.exists == False
+
+    - name: Add shutter repository # Since 18.10 shutter no longer in provided repos
+      become: yes
+      apt_repository: repo='ppa:linuxuprising/shutter' state=present
+
+    - name: Install packages
+      become: yes
+      apt:
+        state: present
+        name: "{{ reqd_packages }}"
+
+    # Install snaps
+    - name: Install snaps
+      become: yes
+      snap:
+        name: '{{ snaps }}'
+        classic: yes
+
+    - name: Install Dropbox
+      unarchive:
+        remote_src: True
+        src: "https://www.dropbox.com/download?plat=lnx.x86_64"
+        dest: /home/tstephen/
+        owner: tstephen
+        group: tstephen
+        mode: 0774
+        creates: /home/tstephen/.dropbox-dist
+      when: dropbox_state == True
+
+    - name: Start Dropbox
+      shell: /home/tstephen/.dropbox-dist/dropboxd &
+      when: dropbox_state == True
+
+    #- name: Install InSync for Google Drive syncing
+
+    - name: Check if GDrive exists
+      stat:
+        path: '/home/tstephen/GDrive'
+      register: gdrive
+
+    - name: Setup some utilities
+      become: yes
+      file:
+        src: '/home/tstephen/GDrive/bin/{{ item }}'
+        dest: '/usr/bin/{{ item }}'
+        state: link
+      with_items: "{{ scripts }}"
+      when: gdrive.stat.exists == True
+
+    - name: Setup desktop links
+      become: yes
+      file:
+        src: '/home/tstephen/GDrive/config/_local_share_applications/{{ item }}'
+        dest: '/usr/bin/{{ item }}'
+        state: link
+      with_items: "{{ links }}"
+      when: gdrive.stat.exists == True
+
+    - name: Check if nextcloud exists
+      stat:
+        path: '/home/tstephen/nextcloud'
+      register: nextcloud
+
+    - name: Link password safe
+      file:
+        src: '/home/tstephen/nextcloud/Documents/yaps2013.psafe3'
+        dest: '/home/tstephen/.local/share/pasaffe/pasaffe.psafe3'
+        state: link
+      when: nextcloud.stat.exists == True
+
