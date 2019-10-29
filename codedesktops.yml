@@ -2,8 +2,10 @@
 - hosts: codedesktops,localhost
   vars:
     reqd_packages:
+      - curl
       - git
       - maven
+      - net-tools
       - openjdk-8-jdk
       - software-properties-common
       - unzip
@@ -46,6 +48,13 @@
         name: '{{ snaps }}'
         classic: yes
 
+    - name: Install node snap
+      become: yes
+      snap:
+        name: 'node'
+        classic: yes
+        channel: '10'
+
     - name: Check if GDrive exists
       stat:
         path: '/home/tstephen/GDrive'
@@ -79,31 +88,7 @@
     #   mode: 0774
     #   creates: /home/tstephen/.local/share/eclipse/eclipse
 
-    - name: Install NodeJS from download as package manager is out of date
-      become: yes
-      unarchive:
-        remote_src: True
-        src: 'https://nodejs.org/dist/latest-v10.x/node-v10.17.0-linux-x64.tar.gz'
-        dest: /var/lib
-        owner: root
-        group: root
-        mode: 0774
-        creates: /var/lib/node-v10.17.0-linux-x64
-
-    - name: Setup NodeJS symlink
-      become: yes
-      file:
-        src: /var/lib/node-v10.17.0-linux-x64/bin/node
-        dest: /usr/bin/node
-        state: link
-
-    - name: Setup NPM symlink
-      become: yes
-      file:
-        src: /var/lib/node-v10.17.0-linux-x64/bin/npm
-        dest: /usr/bin/npm
-        state: link
-
+    # Note node 12 does not appear to be compatible with this
     - name: Install "gulp-cli" node.js package globally.
       become: yes
       npm:
