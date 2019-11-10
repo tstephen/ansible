@@ -1,6 +1,8 @@
 ---
 - hosts: codedesktops,localhost
   vars:
+    removed_packages:
+      - nano
     reqd_packages:
       - curl
       - git
@@ -9,6 +11,7 @@
       - openjdk-8-jdk
       - software-properties-common
       - unzip
+      - vim
     links:
       - eclipse-oxygen.desktop
       - yaoqiang.desktop
@@ -17,6 +20,8 @@
       - trim.sh # Trim all trailing spaces from file
     snaps:
       - docker
+      - code
+    removed_snaps:
       - vscode
     yaoqiang_vsn:
       - 5.3.11
@@ -37,6 +42,12 @@
         state: present
         name: "{{ reqd_packages }}"
 
+    - name: Uninstall packages
+      become: yes
+      apt:
+        name: "{{ removed_packages }}"
+        state: absent
+
 #    - name: Install the Python MySQL module
 #      pip:
 #        name: MySQL-python
@@ -48,6 +59,21 @@
         name: '{{ snaps }}'
         classic: yes
 
+    # Uninstall snaps
+    - name: Uninstall snaps
+      become: yes
+      snap:
+        name: '{{ removed_snaps }}'
+        classic: yes
+        state: absent
+
+    # Docker post-install tasks
+    - name: Ensure group "docker" exists
+      group:
+        name: docker
+        state: present
+
+    # Install node snap separately as it needs to specify channel
     - name: Install node snap
       become: yes
       snap:
