@@ -3,6 +3,7 @@
   vars:
     removed_packages:
       - nano
+      - openjdk-11-jre-headless
     reqd_packages:
       - curl
       - git
@@ -19,8 +20,11 @@
       - rm-bom.sh # Remove byte order mark from BPMN files that prevents deployment
       - trim.sh # Trim all trailing spaces from file
     snaps:
-      - docker
       - code
+      - docker
+      - doctl
+      - helm
+      - kubectl
     removed_snaps:
       - vscode
     yaoqiang_vsn:
@@ -58,6 +62,11 @@
       snap:
         name: '{{ snaps }}'
         classic: yes
+
+    # Perform doctl post-install
+    - name: Connect doctl to kubectl
+      become: yes
+      shell: snap connect doctl:kube-config
 
     # Uninstall snaps
     - name: Uninstall snaps
