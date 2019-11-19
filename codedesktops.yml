@@ -1,6 +1,10 @@
 ---
 - hosts: codedesktops,localhost
   vars:
+    npm_packages:
+      - create-react-app
+      - gulp-cli
+      - webpack-cli
     removed_packages:
       - nano
       - openjdk-11-jre-headless
@@ -124,11 +128,12 @@
     #   creates: /home/tstephen/.local/share/eclipse/eclipse
 
     # Note node 12 does not appear to be compatible with this
-    - name: Install "gulp-cli" node.js package globally.
+    - name: Install node.js global packages
       become: yes
       npm:
-        name: gulp-cli
+        name: "{{ item }}"
         global: yes
+      with_items: "{{ npm_packages }}"
 
     - name: Check if Yaoqiang exists
       stat:
