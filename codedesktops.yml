@@ -29,6 +29,7 @@
       - doctl
       - helm
       - kubectl
+      - terraform
     removed_snaps:
       - vscode
     yaoqiang_vsn:
