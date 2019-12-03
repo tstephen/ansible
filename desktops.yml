@@ -19,6 +19,7 @@
       - unzip
     snaps:
       - foliate
+      - get-iplayer
       - qownnotes
       - vscode
 
