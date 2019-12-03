@@ -12,6 +12,7 @@
       - curl
       - git
       - maven
+      - mysql-client-core-8.0
       - net-tools
       - openjdk-8-jdk
       - software-properties-common
