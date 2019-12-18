@@ -30,7 +30,7 @@
       register: idrsa
 
     - name: Generate keys to connect to other machines
-      shell: ssh-keygen -t rsa -f /home/tstephen/.ssh/id_rsa -P ''
+      shell: ssh-keygen -t rsa -f /home/tstephen/.ssh/id_rsa -m PEM -P ''
       when: idrsa.stat.exists is undefined or idrsa.stat.exists == False
 
     - name: Add shutter repository # Since 18.10 shutter no longer in provided repos
