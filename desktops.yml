@@ -12,6 +12,7 @@
       - gimp
       - inkscape
       - nextcloud-desktop
+      - nextcloud-desktop-cmd
       - pasaffe
       - redshift-gtk
       - shutter
