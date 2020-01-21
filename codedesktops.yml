@@ -16,9 +16,11 @@
       - mysql-client-core-8.0
       - net-tools
       - openjdk-8-jdk
+      - postgresql-client
       - software-properties-common
       - unzip
       - vim
+      - xsltproc
     links:
       - eclipse-oxygen.desktop
       - yaoqiang.desktop
