@@ -16,6 +16,7 @@
       - mysql-client-core-8.0
       - net-tools
       - openjdk-8-jdk
+      - pandoc
       - postgresql-client
       - software-properties-common
       - unzip
