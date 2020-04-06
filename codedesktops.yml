@@ -11,6 +11,7 @@
     reqd_packages:
       - curl
       - git
+      - jq
       - maven
       - meld
       - mysql-client-core-8.0
