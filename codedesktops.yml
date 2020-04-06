@@ -19,6 +19,7 @@
       - pandoc
       - postgresql-client
       - software-properties-common
+      - texlive-extra-utils # includes pdf booklet converter
       - unzip
       - vim
       - xsltproc
