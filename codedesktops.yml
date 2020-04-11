@@ -9,9 +9,13 @@
       - nano
       - openjdk-11-jre-headless
     reqd_packages:
+      - apt-transport-https
+      - ca-certificates
       - curl
       - git
       - jq
+      - gnupg
+      - lsb-release
       - maven
       - meld
       - mysql-client-core-8.0
@@ -24,6 +28,7 @@
       - unzip
       - vim
       - xsltproc
+
     links:
       - eclipse-oxygen.desktop
       - yaoqiang.desktop
@@ -34,6 +39,7 @@
       - code
       - docker
       - doctl
+      - go
       - helm
       - kubectl
       - terraform
@@ -79,6 +85,26 @@
     - name: Connect doctl to kubectl
       become: yes
       shell: snap connect doctl:kube-config
+
+    # Install Azure CLI
+
+    - name: Download and install the Microsoft signing key
+      become: yes
+      shell: "curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
+             gpg --dearmor | \
+             sudo tee /etc/apt/trusted.gpg.d/microsoft.asc.gpg > /dev/null"
+
+             #- name: Add the Azure CLI software repository
+            #AZ_REPO=$(lsb_release -cs)
+            #echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" |
+            #sudo tee /etc/apt/sources.list.d/azure-cli.list
+
+    #sudo apt-get update
+    - name: Update repository information and install the azure-cli package
+      become: yes
+      apt:
+        name: azure-cli
+        state: present 
 
     # Uninstall snaps
     - name: Uninstall snaps

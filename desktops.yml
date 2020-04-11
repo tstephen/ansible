@@ -22,6 +22,7 @@
       - foliate
       - get-iplayer
       - qownnotes
+      - vlc
       - vscode
 
   tasks:
