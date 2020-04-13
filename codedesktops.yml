@@ -23,6 +23,7 @@
       - openjdk-8-jdk
       - pandoc
       - postgresql-client
+      - s3cmd
       - software-properties-common
       - texlive-extra-utils # includes pdf booklet converter
       - unzip
