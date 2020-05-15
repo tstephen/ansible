@@ -22,6 +22,7 @@
       - net-tools
       - openjdk-8-jdk
       - pandoc
+      - pgloader
       - postgresql-client
       - s3cmd
       - software-properties-common
